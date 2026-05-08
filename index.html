@@ -1,217 +1,180 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Pro PWA</title>
+    <title>Gold Inventory Pro</title>
     <link rel="manifest" href="manifest.json">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://sql.js.org/dist/sql-wasm.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     <style>
         :root {
-            --bg-color: #ffffff;
-            --text-color: #212529;
-            --card-bg: #ffffff;
-            --gold: #FFD700;
-            --smith-color: #ff9f0a; /* High Contrast Orange */
-            --profit-color: #32d74b; /* High Contrast Green */
-            --weight-color: #64d2ff; /* High Contrast Blue */
-            --border-color: #dee2e6;
+            --bg: #ffffff; --text: #212529; --card: #ffffff; --border: #dee2e6;
+            --weight-hi: #007bff; --smith-hi: #f39c12; --profit-hi: #27ae60;
         }
-
         [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #e0e0e0;
-            --card-bg: #1e1e1e;
-            --border-color: #333333;
+            --bg: #121212; --text: #e0e0e0; --card: #1e1e1e; --border: #333;
+            --weight-hi: #64d2ff; --smith-hi: #ff9f0a; --profit-hi: #32d74b;
         }
-
-        body { 
-            background-color: var(--bg-color); 
-            color: var(--text-color);
-            transition: all 0.3s ease;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        .metric-card { 
-            background: var(--card-bg); 
-            padding: 1rem; 
-            border-radius: 12px; 
-            border: 1px solid var(--border-color);
-            text-align: center;
-        }
-
-        /* High Contrast Value Styles */
-        .val-weight { color: var(--weight-color); font-weight: 800; }
-        .val-smith { color: var(--smith-color); font-weight: 800; }
-        .val-profit { color: var(--profit-color); font-weight: 800; }
-
-        .sticky-header {
-            position: sticky; top: 0; 
-            background: var(--bg-color); 
-            z-index: 1000; 
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        /* Mobile Optimization: Card view for tables */
+        body { background: var(--bg); color: var(--text); transition: 0.3s; font-family: sans-serif; }
+        .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; }
+        .hi-weight { color: var(--weight-hi); font-weight: 800; }
+        .hi-smith { color: var(--smith-hi); font-weight: 800; }
+        .hi-profit { color: var(--profit-hi); font-weight: 800; }
+        .sticky-nav { position: sticky; top: 0; background: var(--bg); z-index: 1000; border-bottom: 1px solid var(--border); padding: 10px 0; }
+        
+        /* Mobile Card UI */
         @media (max-width: 768px) {
-            .table-responsive { border: none; }
             thead { display: none; }
-            tr { 
-                display: block; 
-                background: var(--card-bg); 
-                margin-bottom: 1rem; 
-                padding: 1rem; 
-                border-radius: 10px;
-                border: 1px solid var(--border-color);
-            }
-            td { 
-                display: flex; 
-                justify-content: space-between; 
-                border: none !important; 
-                padding: 0.25rem 0 !important;
-            }
-            td::before {
-                content: attr(data-label);
-                font-weight: bold;
-                color: #888;
-            }
+            tr { display: block; background: var(--card); border: 1px solid var(--border); margin-bottom: 15px; border-radius: 10px; padding: 10px; }
+            td { display: flex; justify-content: space-between; border: none !important; padding: 5px 0 !important; }
+            td::before { content: attr(data-label); font-weight: bold; opacity: 0.7; }
         }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="sticky-header">
-        <div class="d-flex justify-content-between align-items-center px-2">
-            <h5 class="m-0">💍 Gold Inventory</h5>
+<div class="container-fluid px-3">
+    <nav class="sticky-nav mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="m-0">💍 Gold Pro</h5>
             <div class="d-flex gap-2">
-                <button id="theme-toggle" class="btn btn-outline-secondary btn-sm">🌙 Mode</button>
-                <input type="file" id="db-upload" class="form-control form-control-sm" style="max-width: 150px;">
+                <button id="themeBtn" class="btn btn-sm btn-outline-secondary">🌙 Mode</button>
+                <input type="file" id="dbFile" class="form-control form-control-sm" style="width: 130px;" accept=".db">
             </div>
         </div>
+    </nav>
+
+    <div id="setup" class="text-center py-5">
+        <p class="text-muted">Upload your <b>.db</b> file to activate the dashboard.</p>
     </div>
 
-    <div id="dashboard" class="mt-3" style="display:none;">
+    <div id="mainApp" style="display:none;">
         <div class="row g-2 mb-3">
-            <div class="col-6"><div class="metric-card"><small>Items</small><div id="m-items" class="h5 m-0">0</div></div></div>
-            <div class="col-6"><div class="metric-card"><small>Grams</small><div id="m-grams" class="h5 m-0 val-weight">0</div></div></div>
+            <div class="col-6"><div class="metric-card"><small>Total Items</small><div id="m-items" class="h5 m-0">-</div></div></div>
+            <div class="col-6"><div class="metric-card"><small>Total Grams</small><div id="m-grams" class="h5 m-0 hi-weight">-</div></div></div>
+            <div class="col-12"><div class="metric-card"><small>Net Weight (Burmese)</small><div id="m-burmese" class="h6 m-0">-</div></div></div>
         </div>
 
         <div class="row g-2 mb-3">
-            <div class="col-7">
-                <input type="text" id="search-input" class="form-control" placeholder="🔍 Search...">
-            </div>
+            <div class="col-7"><input type="text" id="search" class="form-control" placeholder="🔍 Search code/name..."></div>
             <div class="col-5">
-                <select id="sort-select" class="form-select">
-                    <option value="item_code">Sort By: Code</option>
-                    <option value="weight_gram">Weight (High)</option>
-                    <option value="qty_on_hand">Qty (High)</option>
+                <select id="sort" class="form-select">
+                    <option value="item_code">Sort: Code</option>
+                    <option value="weight_gram">Sort: Weight</option>
+                    <option value="qty_on_hand">Sort: Qty</option>
                 </select>
             </div>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Item</th><th>Qty</th><th>Weight</th><th>Smith</th><th>Profit</th>
-                    </tr>
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr><th>Item</th><th>Qty</th><th>Weight</th><th>Smith</th><th>Profit</th></tr>
                 </thead>
-                <tbody id="table-body"></tbody>
+                <tbody id="list"></tbody>
             </table>
         </div>
-    </div>
-
-    <div id="welcome-screen" class="text-center mt-5">
-        <p>Please upload your database to start.</p>
     </div>
 </div>
 
 <script>
-let fullData = [];
-let SQL_ENGINE = null;
+let rawData = [];
+let SQL = null;
 
-// Initialize Theme
-const toggle = document.getElementById('theme-toggle');
-toggle.onclick = () => {
-    const isDark = document.body.getAttribute('data-theme') === 'dark';
-    document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    toggle.innerText = isDark ? '🌙 Night' : '☀️ Day';
+// Initialization
+initSqlJs({ locateFile: f => `https://sql.js.org/dist/${f}` }).then(s => SQL = s);
+
+// Theme Toggle
+document.getElementById('themeBtn').onclick = () => {
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('themeBtn').innerText = theme === 'dark' ? '☀️ Day' : '🌙 Night';
 };
 
-// Initialize SQL
-initSqlJs({ locateFile: f => `https://sql.js.org/dist/${f}` }).then(sql => SQL_ENGINE = sql);
-
-// Burmese Logic
-function formatB(k, p, y) {
-    return `${Math.floor(k||0)}k ${Math.floor(p||0)}p ${Number(y||0).toFixed(1)}y`;
-}
-
-document.getElementById('db-upload').onchange = (e) => {
+// Database Loading
+document.getElementById('dbFile').onchange = (e) => {
     const reader = new FileReader();
     reader.onload = function() {
-        const db = new SQL_ENGINE.Database(new Uint8Array(reader.result));
+        const db = new SQL.Database(new Uint8Array(reader.result));
         const res = db.exec("SELECT * FROM burmese_table");
-        const headers = res[0].columns;
+        if (!res.length) return alert("Table not found!");
+
         const rows = res[0].values;
+        const headers = rows[8]; // Matches Python header_idx = 8
         
-        // Exact processing matching your file structure
-        const headerRow = rows[8];
-        fullData = rows.slice(9).map(row => {
+        rawData = rows.slice(9).map(r => {
             let obj = {};
-            headerRow.forEach((col, i) => {
-                let key = col.trim();
+            headers.forEach((h, i) => {
+                let key = String(h).trim();
+                // Normalize Burmese Column names
                 if (key.includes("Net_kyat")) key = "Net_Kyat";
                 if (key.includes("Net_pae")) key = "Net_Pe";
                 if (key.includes("Net_yway")) key = "Net_Yway";
-                obj[key] = row[i];
+                obj[key] = r[i];
             });
             return obj;
         });
 
-        document.getElementById('welcome-screen').remove();
-        document.getElementById('dashboard').style.display = 'block';
-        render();
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        updateUI();
     };
     reader.readAsArrayBuffer(e.target.files[0]);
 };
 
-function render() {
-    let data = [...fullData];
-    
-    // 1. Search
-    const term = document.getElementById('search-input').value.toLowerCase();
-    data = data.filter(i => JSON.stringify(i).toLowerCase().includes(term));
+// Burmese Weight Formatter
+function fmtB(k, p, y) {
+    let parts = [];
+    if (k > 0) parts.push(`${Math.floor(k)}k`);
+    if (p > 0) parts.push(`${Math.floor(p)}p`);
+    if (y > 0) parts.push(`${Number(y).toFixed(1)}y`);
+    return parts.length ? parts.join(" ") : "0";
+}
 
-    // 2. Sort
-    const sortBy = document.getElementById('sort-select').value;
-    data.sort((a, b) => {
-        let vA = a[sortBy], vB = b[sortBy];
-        return isNaN(vA) ? String(vA).localeCompare(String(vB)) : vB - vA;
+// Logic to calculate normalized totals
+function calcTotals(data) {
+    let tk = data.reduce((a, b) => a + (Number(b.Net_Kyat) || 0), 0);
+    let tp = data.reduce((a, b) => a + (Number(b.Net_Pe) || 0), 0);
+    let ty = data.reduce((a, b) => a + (Number(b.Net_Yway) || 0), 0);
+    tp += Math.floor(ty / 8);
+    ty = (ty % 8).toFixed(2);
+    tk += Math.floor(tp / 16);
+    tp = Math.floor(tp % 16);
+    return `${tk} ကျပ် ${tp} ပဲ ${ty} ရွေး`;
+}
+
+// Core Update Function (Sorting/Filtering/Rendering)
+function updateUI() {
+    let filtered = rawData.filter(i => 
+        JSON.stringify(i).toLowerCase().includes(document.getElementById('search').value.toLowerCase())
+    );
+
+    const sortBy = document.getElementById('sort').value;
+    filtered.sort((a, b) => {
+        let v1 = a[sortBy], v2 = b[sortBy];
+        return isNaN(v1) ? String(v1).localeCompare(String(v2)) : v2 - v1;
     });
 
-    // 3. Display Metrics
-    document.getElementById('m-items').innerText = data.length;
-    document.getElementById('m-grams').innerText = data.reduce((a,b)=>a+(Number(b.weight_gram)||0),0).toFixed(2);
+    // Metrics
+    document.getElementById('m-items').innerText = filtered.length;
+    document.getElementById('m-grams').innerText = filtered.reduce((a,b)=>a+(Number(b.weight_gram)||0),0).toFixed(2) + " g";
+    document.getElementById('m-burmese').innerText = calcTotals(filtered);
 
-    // 4. Render Rows
-    const tbody = document.getElementById('table-body');
-    tbody.innerHTML = data.map(i => `
+    // List Rendering with High Contrast Colors
+    document.getElementById('list').innerHTML = filtered.map(i => `
         <tr>
-            <td data-label="Item"><strong>${i.item_code}</strong><br><small>${i.item_name}</small></td>
+            <td data-label="Item"><b>${i.item_code}</b><br><small>${i.item_name}</small></td>
             <td data-label="Qty">${i.qty_on_hand}</td>
-            <td data-label="Weight" class="val-weight">${formatB(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</td>
-            <td data-label="Smith" class="val-smith">${formatB(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</td>
-            <td data-label="Profit" class="val-profit">${formatB(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</td>
+            <td data-label="Weight" class="hi-weight">${fmtB(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</td>
+            <td data-label="Smith" class="hi-smith">${fmtB(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</td>
+            <td data-label="Profit" class="hi-profit">${fmtB(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</td>
         </tr>
     `).join('');
 }
 
-document.getElementById('search-input').oninput = render;
-document.getElementById('sort-select').onchange = render;
+document.getElementById('search').oninput = updateUI;
+document.getElementById('sort').onchange = updateUI;
 </script>
 </body>
 </html>
