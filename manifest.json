@@ -1,9 +1,9 @@
 {
   "name": "Gold Inventory Pro",
   "short_name": "GoldInv",
-  "start_url": "index.html",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#f4f7f6",
   "theme_color": "#d4af37",
   "icons": [
     {
