@@ -1,253 +1,149 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gold Inventory Pro PWA</title>
-    <link rel="manifest" href="manifest.json">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <style>
-        :root {
-            --bg-body: #f0f2f5; --bg-card: #ffffff; --text-main: #1c1e21;
-            --accent-smith: #e67e22; --accent-sale: #2ecc71; --accent-net: #3498db; --accent-qty: #9b59b6;
-            --border-color: #dee2e6;
-        }
-        [data-theme="dark"] {
-            --bg-body: #18191a; --bg-card: #242526; --text-main: #e4e6eb;
-            --border-color: #3e4042; --accent-smith: #f39c12; --accent-sale: #27ae60; --accent-net: #5dade2;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Gold Inventory Pro — Enterprise Edition</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: -apple-system, system-ui, sans-serif; transition: 0.3s; }
-        
-        /* Metric Cards - Responsive font sizes */
-        .metric-card { background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color); text-align: center; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .metric-value { font-size: calc(1rem + 0.5vw); font-weight: 800; color: var(--accent-net); }
-        .metric-label { font-size: 0.7rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; }
-
-        /* Category Tags */
-        .tag-container { display: flex; overflow-x: auto; gap: 8px; padding: 10px 0; scrollbar-width: none; }
-        .tag-container::-webkit-scrollbar { display: none; }
-        .cat-tag { background: var(--bg-card); border: 1px solid var(--accent-net); color: var(--accent-net); padding: 5px 15px; border-radius: 20px; white-space: nowrap; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
-        .cat-tag.active { background: var(--accent-net); color: white; }
-
-        /* Product Badges */
-        .badge-box { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; color: #fff; min-width: 70px; text-align: center; }
-        .bg-net { background-color: var(--accent-net); }
-        .bg-smith { background-color: var(--accent-smith); }
-        .bg-sale { background-color: var(--accent-sale); }
-        .bg-qty { background-color: var(--accent-qty); }
-
-        .search-container { position: sticky; top: 0; z-index: 1000; background: var(--bg-body); padding: 10px 0; }
-        .table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); margin-top: 10px; overflow: hidden; }
-        
-        #drop-area { border: 2px dashed #999; border-radius: 15px; padding: 40px; text-align: center; background: var(--bg-card); cursor: pointer; }
-        .hidden { display: none !important; }
-        
-        @media (max-width: 768px) {
-            .table { font-size: 0.85rem; }
-            .badge-box { min-width: 50px; font-size: 0.7rem; }
-        }
-    </style>
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#fff; --text:#111827; --muted:#6b7280; --border:#e5e7eb;
+      --primary:#2563eb; --success:#16a34a; --warn:#d97706; --violet:#7c3aed;
+      --shadow:0 8px 30px rgba(0,0,0,.06);
+    }
+    [data-theme='dark']{
+      --bg:#111827; --card:#1f2937; --text:#f3f4f6; --muted:#9ca3af; --border:#374151;
+      --shadow:0 8px 30px rgba(0,0,0,.25);
+    }
+    body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;transition:.2s}
+    .cardx{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
+    .metric{padding:1rem;text-align:center;height:100%}
+    .metric .v{font-weight:800;font-size:clamp(1.1rem,2vw,1.8rem);color:var(--primary)}
+    .metric .l{font-size:.75rem;color:var(--muted);text-transform:uppercase}
+    .sticky-topbar{position:sticky;top:0;z-index:1000;background:var(--bg);backdrop-filter:blur(8px)}
+    .tag{padding:.45rem .9rem;border-radius:999px;border:1px solid var(--primary);cursor:pointer;white-space:nowrap}
+    .tag.active{background:var(--primary);color:#fff}
+    .tags{display:flex;gap:.5rem;overflow:auto;padding:.5rem 0;scrollbar-width:none}
+    .tags::-webkit-scrollbar{display:none}
+    .drop{border:2px dashed var(--border);padding:3rem;border-radius:18px;text-align:center;cursor:pointer;background:var(--card)}
+    .badge-pill{min-width:72px}
+    .table td,.table th{vertical-align:middle}
+    .hidden{display:none!important}
+  </style>
 </head>
 <body>
+<div class="container-fluid py-3" style="max-width:1500px">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold m-0">💎 Gold Inventory Pro</h4>
+    <div class="form-check form-switch"><input id="theme" class="form-check-input" type="checkbox"></div>
+  </div>
 
-<div class="container-fluid px-3 py-2" style="max-width: 1400px;">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0 fw-bold">💎 Gold Inventory Pro</h5>
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="theme-switch">
-        </div>
+  <div id="drop" class="drop mb-3">📁 Click or drop <b>gold_stock.db</b><input id="file" type="file" accept=".db" hidden></div>
+
+  <section id="app" class="hidden">
+    <div class="sticky-topbar pb-2">
+      <input id="search" class="form-control mb-2" placeholder="Search code, name, smith...">
+      <div id="tags" class="tags"></div>
+      <div class="form-check form-switch"><input id="chartsToggle" class="form-check-input" type="checkbox"><label class="form-check-label">Show Analytics</label></div>
     </div>
 
-    <div id="drop-area" class="mb-3">
-        <p class="mb-0">📁 Click or Drop <b>gold_stock.db</b></p>
-        <input type="file" id="db-upload" class="hidden" accept=".db">
+    <div class="row g-2 my-2">
+      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Unique</div><div id="u" class="v">-</div></div></div>
+      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Stock Qty</div><div id="q" class="v">-</div></div></div>
+      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Total Grams</div><div id="g" class="v">-</div></div></div>
+      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Burmese Weight</div><div id="bw" class="v">-</div></div></div>
     </div>
 
-    <div id="app-content" class="hidden">
-        <div class="search-container">
-            <input type="text" id="search-input" class="form-control shadow-sm mb-2" placeholder="Search code, name, or smith...">
-            <div id="category-tags" class="tag-container">
-                </div>
-            <div class="form-check form-switch mt-1">
-                <input class="form-check-input" type="checkbox" id="chart-toggle">
-                <label class="form-check-label small" for="chart-toggle">Show Infographics</label>
-            </div>
-        </div>
-
-        <div class="row g-2 mb-3">
-            <div class="col-6 col-md-2"><div class="metric-card"><div class="metric-label">Unique</div><div class="metric-value" id="m-unique">-</div></div></div>
-            <div class="col-6 col-md-2"><div class="metric-card"><div class="metric-label">Stock Qty</div><div class="metric-value" id="m-qty">-</div></div></div>
-            <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-label">Total Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
-            <div class="col-6 col-md-5"><div class="metric-card"><div class="metric-label">Burmese Weight</div><div class="metric-value" id="m-weight">-</div></div></div>
-        </div>
-
-        <div id="chart-section" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-3 hidden">
-            <div class="col"><div class="metric-card"><div id="chart-cat"></div></div></div>
-            <div class="col"><div class="metric-card"><div id="chart-pie"></div></div></div>
-            <div class="col"><div class="metric-card"><div id="chart-smith"></div></div></div>
-        </div>
-
-        <div class="table-container shadow-sm">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Item Details</th>
-                            <th>Qty</th>
-                            <th onclick="toggleSort('weight_gram')" style="cursor:pointer">Gram ⇅</th>
-                            <th>Net Weight</th>
-                            <th>Smith Wage</th>
-                            <th>Sale Profit</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body"></tbody>
-                </table>
-            </div>
-        </div>
+    <div id="charts" class="row g-3 my-2 hidden">
+      <div class="col-md-4"><div class="cardx p-2"><div id="c1"></div></div></div>
+      <div class="col-md-4"><div class="cardx p-2"><div id="c2"></div></div></div>
+      <div class="col-md-4"><div class="cardx p-2"><div id="c3"></div></div></div>
     </div>
+
+    <div class="cardx p-2 mt-3">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Item</th><th>Qty</th><th id="sortGram" style="cursor:pointer">Gram ⇅</th><th>Net</th><th>Smith</th><th>Profit</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 </div>
 
-<div class="modal fade" id="itemModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" id="modal-content" style="background:var(--bg-card); color:var(--text-main); padding:20px; border-radius:15px;"></div></div></div>
+<div class="modal fade" id="detailModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4" id="modalBody"></div></div></div>
 
 <script>
-    let db = null, fullData = [], selectedCat = "All", currentSort = { key: 'weight_gram', asc: false };
+let db=null,data=[],selected='All',sort={key:'weight_gram',asc:false};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const debounce=(fn,d=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),d)}};
 
-    function formatBW(k, p, y) {
-        let res = [];
-        if (k > 0) res.push(`${Math.floor(k)}k`);
-        if (p > 0) res.push(`${Math.floor(p)}p`);
-        if (y > 0) res.push(`${y}y`);
-        return res.length > 0 ? res.join(" ") : "0";
-    }
+function bw(k,p,y){const out=[]; if(k>0) out.push(`${Math.floor(k)}k`); if(p>0) out.push(`${Math.floor(p)}p`); if(y>0) out.push(`${(+y).toFixed(1)}y`); return out.join(' ')||'0';}
+function totalBW(rows){ let k=0,p=0,y=0; rows.forEach(r=>{k+=+r.Net_Kyat||0;p+=+r.Net_Pe||0;y+=+r.Net_Yway||0}); p+=Math.floor(y/8); y%=8; k+=Math.floor(p/16); p%=16; return `${k}K ${p}P ${y.toFixed(1)}Y`; }
 
-    function getBurmeseTotal(data) {
-        let tk = data.reduce((s, r) => s + (parseFloat(r.Net_Kyat) || 0), 0);
-        let tp = data.reduce((s, r) => s + (parseFloat(r.Net_Pe) || 0), 0);
-        let ty = data.reduce((s, r) => s + (parseFloat(r.Net_Yway) || 0), 0);
-        tp += Math.floor(ty / 8); ty %= 8;
-        tk += Math.floor(tp / 16); tp %= 16;
-        return `${Math.floor(tk)}K ${Math.floor(tp)}P ${ty.toFixed(1)}Y`;
-    }
+async function loadDB(file){
+  const SQL=await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`});
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  db=new SQL.Database(bytes);
+  const stmt=db.prepare('SELECT * FROM items'); data=[]; const cats=new Set(['All']);
+  while(stmt.step()){
+    const r=stmt.getAsObject();
+    r.Net_Kyat=r['Net (ကျပ်) Net_kyat']||0; r.Net_Pe=r['Net (ပဲ) Net_pae']||0; r.Net_Yway=r['Net (ရွေး) Net_yway']||0;
+    data.push(r); if(r.category) cats.add(r.category);
+  }
+  $('tags').innerHTML=[...cats].map(c=>`<span class='tag ${c==='All'?'active':''}' onclick='setCat(${JSON.stringify(c)},this)'>${esc(c)}</span>`).join('');
+  $('drop').classList.add('hidden'); $('app').classList.remove('hidden'); render();
+}
 
-    document.getElementById('drop-area').onclick = () => document.getElementById('db-upload').click();
-    document.getElementById('db-upload').onchange = async (e) => {
-        const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
-        const reader = new FileReader();
-        reader.onload = () => {
-            db = new SQL.Database(new Uint8Array(reader.result));
-            loadDB();
-            document.getElementById('drop-area').classList.add('hidden');
-            document.getElementById('app-content').classList.remove('hidden');
-        };
-        reader.readAsArrayBuffer(e.target.files[0]);
-    };
+function setCat(c,el){selected=c; document.querySelectorAll('.tag').forEach(x=>x.classList.remove('active')); el.classList.add('active'); render();}
+function sortBy(k){sort.asc=sort.key===k?!sort.asc:false; sort.key=k; render();}
+$('sortGram').onclick=()=>sortBy('weight_gram');
 
-    function loadDB() {
-        const stmt = db.prepare("SELECT * FROM items");
-        fullData = [];
-        let cats = new Set(["All"]);
-        while(stmt.step()) {
-            let r = stmt.getAsObject();
-            let item = { ...r, 
-                Net_Kyat: r['Net (ကျပ်) Net_kyat'] || 0, Net_Pe: r['Net (ပဲ) Net_pae'] || 0, Net_Yway: r['Net (ရွေး) Net_yway'] || 0 
-            };
-            fullData.push(item);
-            if(item.category) cats.add(item.category);
-        }
-        
-        // Render Tags
-        document.getElementById('category-tags').innerHTML = [...cats].map(c => 
-            `<div class="cat-tag ${c==='All'?'active':''}" onclick="filterByTag('${c}', this)">${c}</div>`
-        ).join('');
-        
-        render();
-    }
+function filtered(){
+  const t=$('search').value.toLowerCase();
+  return data.filter(i=>(selected==='All'||i.category===selected)&&(`${i.item_code} ${i.item_name} ${i.goldsmith_id}`.toLowerCase().includes(t)))
+    .sort((a,b)=> sort.asc ? (+a[sort.key]-+b[sort.key]) : (+b[sort.key]-+a[sort.key]));
+}
 
-    function filterByTag(cat, el) {
-        selectedCat = cat;
-        document.querySelectorAll('.cat-tag').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
-        render();
-    }
+function render(){
+  const rows=filtered();
+  $('u').textContent=rows.length;
+  $('q').textContent=rows.reduce((s,r)=>s+(+r.qty_on_hand||0),0);
+  $('g').textContent=rows.reduce((s,r)=>s+(+r.weight_gram||0),0).toFixed(2);
+  $('bw').textContent=totalBW(rows);
+  $('tbody').innerHTML=rows.map(i=>`<tr ondblclick='detail(${JSON.stringify(i.item_code)})'><td><b>${esc(i.item_name)}</b><br><small>${esc(i.item_code)}</small></td><td><span class='badge text-bg-secondary badge-pill'>${i.qty_on_hand}</span></td><td>${(+i.weight_gram).toFixed(2)}g</td><td>${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</td><td>${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</td><td>${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</td></tr>`).join('');
+  if(!$('charts').classList.contains('hidden')) drawCharts(rows);
+}
 
-    function toggleSort(key) {
-        currentSort.asc = (currentSort.key === key) ? !currentSort.asc : false;
-        currentSort.key = key;
-        render();
-    }
+function detail(code){
+ const i=data.find(x=>x.item_code===code); if(!i) return;
+ $('modalBody').innerHTML=`<h5>${esc(i.item_name)}</h5><hr><p><b>Code:</b> ${esc(i.item_code)}</p><p><b>Purity:</b> ${esc(i.purity)}</p><p><b>Smith:</b> ${esc(i.goldsmith_id)}</p><p><b>Location:</b> ${esc(i.location)}</p><p><b>Status:</b> ${esc(i.status)}</p><div class='alert alert-light'>${esc(i.notes||'No notes')}</div>`;
+ new bootstrap.Modal($('detailModal')).show();
+}
 
-    function render() {
-        const term = document.getElementById('search-input').value.toLowerCase();
-        let data = fullData.filter(i => 
-            (selectedCat === "All" || i.category === selectedCat) &&
-            (String(i.item_code).toLowerCase().includes(term) || String(i.item_name).toLowerCase().includes(term))
-        );
+function drawCharts(rows){
+ const cats=[...new Set(rows.map(x=>x.category||'Other'))];
+ const qty=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
+ const smith=[...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
+ const grams=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.weight_gram||0),0));
+ const L={height:260,margin:{t:40,l:20,r:20,b:30},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)'};
+ Plotly.react('c1',[{x:cats,y:qty,type:'bar'}],{...L,title:'Qty by Category'});
+ Plotly.react('c2',[{labels:cats,values:qty,type:'pie',hole:.45}],{...L,title:'Stock Distribution'});
+ Plotly.react('c3',[{labels:smith,values:grams,type:'pie',hole:.45}],{...L,title:'Gram by Smith'});
+}
 
-        data.sort((a, b) => {
-            let vA = parseFloat(a[currentSort.key]) || 0;
-            let vB = parseFloat(b[currentSort.key]) || 0;
-            return currentSort.asc ? vA - vB : vB - vA;
-        });
-
-        document.getElementById('m-unique').innerText = data.length;
-        document.getElementById('m-qty').innerText = data.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
-        document.getElementById('m-grams').innerText = data.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(2);
-        document.getElementById('m-weight').innerText = getBurmeseTotal(data);
-
-        document.getElementById('table-body').innerHTML = data.map(i => `
-            <tr ondblclick="showDetail('${i.item_code}')">
-                <td><b>${i.item_name}</b><br><small class="text-muted">${i.item_code}</small></td>
-                <td><span class="badge-box bg-qty">${i.qty_on_hand}</span></td>
-                <td><b>${i.weight_gram}g</b></td>
-                <td><span class="badge-box bg-net">${formatBW(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</span></td>
-                <td><span class="badge-box bg-smith">${formatBW(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</span></td>
-                <td><span class="badge-box bg-sale">${formatBW(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</span></td>
-            </tr>
-        `).join('');
-        renderCharts(data);
-    }
-
-    function showDetail(code) {
-        const i = fullData.find(x => x.item_code === code);
-        document.getElementById('modal-content').innerHTML = `
-            <h6>${i.item_name} (${i.item_code})</h6>
-            <hr>
-            <p class="small mb-1"><b>Smith:</b> ${i.goldsmith_id} | <b>Purity:</b> ${i.purity}</p>
-            <p class="small mb-1"><b>Location:</b> ${i.location} | <b>Status:</b> ${i.status}</p>
-            <p class="small mb-1"><b>Category:</b> ${i.category}</p>
-            <div class="mt-2 p-2 bg-light text-dark rounded small">${i.notes || 'No extra notes.'}</div>
-        `;
-        new bootstrap.Modal(document.getElementById('itemModal')).show();
-    }
-
-    function renderCharts(data) {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const layout = { height: 220, margin: {t:40, b:20, l:20, r:10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 10, color: isDark ? '#fff' : '#333' } };
-        
-        const cats = [...new Set(data.map(i => i.category || 'Other'))];
-        const catQty = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + r.qty_on_hand, 0));
-        const smiths = [...new Set(data.map(i => i.goldsmith_id || 'Unknown'))];
-        const smithW = smiths.map(s => data.filter(i => i.goldsmith_id === s).reduce((sum, r) => sum + parseFloat(r.weight_gram), 0));
-
-        Plotly.newPlot('chart-cat', [{ x: cats, y: catQty, type: 'bar', marker: {color: '#3498db'} }], { ...layout, title: 'Qty by Category' });
-        Plotly.newPlot('chart-pie', [{ values: catQty, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Stock Distribution' });
-        Plotly.newPlot('chart-smith', [{ values: smithW, labels: smiths, type: 'pie', hole: 0.4 }], { ...layout, title: 'Gram by Smith' });
-    }
-
-    document.getElementById('search-input').oninput = () => render();
-    document.getElementById('chart-toggle').onchange = (e) => {
-        document.getElementById('chart-section').classList.toggle('hidden', !e.target.checked);
-        if(e.target.checked) renderCharts(fullData);
-    };
-    document.getElementById('theme-switch').onchange = (e) => {
-        document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
-        render();
-    };
+$('drop').onclick=()=>$('file').click();
+$('file').onchange=e=>e.target.files[0]&&loadDB(e.target.files[0]);
+$('search').oninput=debounce(render);
+$('chartsToggle').onchange=e=>{$('charts').classList.toggle('hidden',!e.target.checked); render();};
+$('theme').onchange=e=>{document.documentElement.dataset.theme=e.target.checked?'dark':'light'; localStorage.theme=document.documentElement.dataset.theme; render();};
+if(localStorage.theme==='dark'){ $('theme').checked=true; document.documentElement.dataset.theme='dark'; }
 </script>
 </body>
 </html>
