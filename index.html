@@ -20,72 +20,58 @@
             --border-color: #30363d; --accent-smith: #ffb700; --accent-sale: #00e676;
         }
 
-        body { 
-            background-color: var(--bg-body); color: var(--text-main); 
-            font-family: -apple-system, system-ui, sans-serif; transition: 0.3s;
-        }
-
-        .metric-card {
-            background: var(--bg-card); padding: 1.2rem; border-radius: 12px;
-            border: 1px solid var(--border-color); height: 100%;
-        }
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: sans-serif; transition: 0.3s; padding-bottom: 30px; }
+        .metric-card { background: var(--bg-card); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); height: 100%; text-align: center; }
         .metric-value { font-size: 1.2rem; font-weight: 700; }
         .metric-label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; }
 
-        .table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); }
-        .table { font-size: 0.85rem; cursor: pointer; user-select: none; }
+        .search-container { position: sticky; top: 0; z-index: 100; background: var(--bg-body); padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+        .table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); margin-top: 15px; }
         
-        .smith-col { color: var(--accent-smith); font-weight: 600; }
-        .sale-col { color: var(--accent-sale); font-weight: 600; }
+        .smith-text { color: var(--accent-smith); font-weight: 600; }
+        .sale-text { color: var(--accent-sale); font-weight: 600; }
         
-        #drop-area { border: 2px dashed #999; border-radius: 15px; padding: 30px; text-align: center; background: var(--bg-card); }
+        #drop-area { border: 2px dashed #999; border-radius: 15px; padding: 30px; text-align: center; background: var(--bg-card); cursor: pointer; }
         .hidden { display: none !important; }
-        
-        /* Modal Styling */
-        .modal-content { background-color: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); }
+        tr { cursor: pointer; user-select: none; }
+        th { cursor: pointer; background-color: rgba(0,0,0,0.05) !important; }
+        th:hover { background-color: rgba(0,0,0,0.1) !important; }
     </style>
 </head>
 <body>
 
 <div class="container py-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">💍 Gold Pro</h4>
+        <h4 class="mb-0">💍 Gold Inventory Pro</h4>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="theme-switch">
         </div>
     </div>
 
-    <div id="drop-area" class="mb-3">
-        <p class="mb-0">📁 Upload <code>gold_stock.db</code></p>
+    <div id="drop-area" class="mb-4">
+        <p class="mb-0">📁 Tap to Upload <code>gold_stock.db</code></p>
         <input type="file" id="db-upload" class="hidden" accept=".db">
     </div>
 
     <div id="app-content" class="hidden">
-        <div class="row g-2 mb-3">
-            <div class="col-12"><input type="text" id="search-input" class="form-control" placeholder="🔍 Search code, name, or smith..."></div>
-            <div class="col-12">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="chart-toggle">
-                    <label class="form-check-label small" for="chart-toggle">Show Charts</label>
-                </div>
+        <div class="search-container mb-3">
+            <input type="text" id="search-input" class="form-control mb-2" placeholder="Search item, code, or goldsmith...">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="chart-toggle">
+                <label class="form-check-label ms-1" for="chart-toggle">Analytics</label>
             </div>
         </div>
 
         <div class="row g-2 mb-4">
-            <div class="col-4 col-md-3"><div class="metric-card"><div class="metric-label">Items</div><div class="metric-value" id="m-unique">-</div></div></div>
-            <div class="col-4 col-md-3"><div class="metric-card"><div class="metric-label">Qty</div><div class="metric-value" id="m-qty">-</div></div></div>
-            <div class="col-4 col-md-3"><div class="metric-card"><div class="metric-label">Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
-            <div class="col-12 col-md-3"><div class="metric-card"><div class="metric-label">Net Weight</div><div class="metric-value" id="m-weight" style="font-size: 1rem;">-</div></div></div>
+            <div class="col-4 col-md-2"><div class="metric-card"><div class="metric-label">Items</div><div class="metric-value" id="m-unique">-</div></div></div>
+            <div class="col-4 col-md-2"><div class="metric-card"><div class="metric-label">Stock</div><div class="metric-value" id="m-qty">-</div></div></div>
+            <div class="col-4 col-md-3"><div class="metric-card"><div class="metric-label">Total Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
+            <div class="col-12 col-md-5"><div class="metric-card"><div class="metric-label">Burmese Total</div><div class="metric-value" id="m-weight">-</div></div></div>
         </div>
 
-        <div id="chart-section" class="row g-2 mb-4 hidden">
+        <div id="chart-section" class="row g-3 mb-4 hidden">
             <div class="col-md-6"><div class="metric-card"><div id="chart-cat"></div></div></div>
-            <div class="col-md-6"><div class="metric-card"><div id="chart-pie"></div></div></div>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-end mb-2">
-            <h6 class="mb-0">📋 Inventory (Double-click for details)</h6>
-            <span class="small text-muted">Sorted by Grams (Desc)</span>
+            <div class="col-md-6"><div class="metric-card"><div id="chart-smith"></div></div></div>
         </div>
 
         <div class="table-container">
@@ -94,8 +80,8 @@
                     <thead class="table-light">
                         <tr>
                             <th>Item/Code</th>
-                            <th>Grams</th>
-                            <th>Net Weight</th>
+                            <th onclick="toggleSort('weight_gram')">Grams ⇅</th>
+                            <th>Net (B)</th>
                             <th>Smith Wage</th>
                             <th>Sale Profit</th>
                         </tr>
@@ -109,129 +95,135 @@
 
 <div class="modal fade" id="itemModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="modalTitle">Item Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body pt-0" id="modalBody"></div>
+        <div class="modal-content" style="background: var(--bg-card); color: var(--text-main);">
+            <div class="modal-header border-0"><h5 class="modal-title">Item Detail</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body" id="modal-content"></div>
         </div>
     </div>
 </div>
 
 <script>
-    let db = null;
-    let fullData = [];
-    const itemModal = new Bootstrap.Modal(document.getElementById('itemModal'));
+    let db = null, fullData = [], currentSort = { key: 'weight_gram', asc: false };
 
-    function formatBurmeseWeight(k, p, y) {
-        let parts = [];
-        if (k > 0) parts.push(`${Math.floor(k)} ကျပ်`);
-        if (p > 0) parts.push(`${Math.floor(p)} ပဲ`);
-        if (y > 0) parts.push(`${y} ရွေး`);
-        return parts.length > 0 ? parts.join(" ") : "0";
+    function formatBW(k, p, y) {
+        let res = [];
+        if (k > 0) res.push(`${Math.floor(k)}ကျပ်`);
+        if (p > 0) res.push(`${Math.floor(p)}ပဲ`);
+        if (y > 0) res.push(`${y}ရွေး`);
+        return res.length > 0 ? res.join(" ") : "0";
     }
 
-    function getNormalizedTotals(data) {
-        let tk = 0, tp = 0, ty = 0;
-        data.forEach(r => {
-            tk += parseFloat(r.Net_Kyat) || 0;
-            tp += parseFloat(r.Net_Pe) || 0;
-            ty += parseFloat(r.Net_Yway) || 0;
-        });
+    function getBurmeseTotal(data) {
+        let tk = data.reduce((s, r) => s + (parseFloat(r.Net_Kyat) || 0), 0);
+        let tp = data.reduce((s, r) => s + (parseFloat(r.Net_Pe) || 0), 0);
+        let ty = data.reduce((s, r) => s + (parseFloat(r.Net_Yway) || 0), 0);
         tp += Math.floor(ty / 8); ty %= 8;
         tk += Math.floor(tp / 16); tp %= 16;
-        return `${Math.floor(tk)} ကျပ် ${tp} ပဲ ${ty.toFixed(2)} ရွေး`;
+        return `${Math.floor(tk)} ကျပ် ${Math.floor(tp)} ပဲ ${ty.toFixed(2)} ရွေး`;
     }
 
+    const config = { locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` };
     document.getElementById('drop-area').onclick = () => document.getElementById('db-upload').click();
-    
-    document.getElementById('db-upload').onchange = async function(e) {
-        const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
+    document.getElementById('db-upload').onchange = async (e) => {
+        const SQL = await initSqlJs(config);
         const reader = new FileReader();
-        reader.onload = function() {
+        reader.onload = () => {
             db = new SQL.Database(new Uint8Array(reader.result));
-            processData();
+            loadDB();
             document.getElementById('drop-area').classList.add('hidden');
             document.getElementById('app-content').classList.remove('hidden');
         };
         reader.readAsArrayBuffer(e.target.files[0]);
     };
 
-    function processData() {
-        const res = db.exec("SELECT * FROM items");
-        const cols = res[0].columns;
-        fullData = res[0].values.map(row => {
-            let obj = {};
-            cols.forEach((c, i) => {
-                let key = c;
-                if(c === 'Net (ကျပ်) Net_kyat') key = 'Net_Kyat';
-                if(c === 'Net (ပဲ) Net_pae') key = 'Net_Pe';
-                if(c === 'Net (ရွေး) Net_yway') key = 'Net_Yway';
-                obj[key] = row[i];
+    function loadDB() {
+        const stmt = db.prepare("SELECT * FROM items");
+        fullData = [];
+        while(stmt.step()) {
+            let r = stmt.getAsObject();
+            fullData.push({ ...r, 
+                Net_Kyat: r['Net (ကျပ်) Net_kyat'] || 0, 
+                Net_Pe: r['Net (ပဲ) Net_pae'] || 0, 
+                Net_Yway: r['Net (ရွေး) Net_yway'] || 0 
             });
-            return obj;
-        });
+        }
+        render(fullData);
+    }
+
+    function toggleSort(key) {
+        currentSort.asc = currentSort.key === key ? !currentSort.asc : false;
+        currentSort.key = key;
         render(fullData);
     }
 
     function render(data) {
-        // Sort by weight_gram descending
-        data.sort((a, b) => (parseFloat(b.weight_gram) || 0) - (parseFloat(a.weight_gram) || 0));
+        const term = document.getElementById('search-input').value.toLowerCase();
+        let filtered = data.filter(i => 
+            String(i.item_code).toLowerCase().includes(term) || 
+            String(i.item_name).toLowerCase().includes(term) ||
+            String(i.goldsmith_id).toLowerCase().includes(term)
+        );
 
-        document.getElementById('m-unique').innerText = data.length;
-        document.getElementById('m-qty').innerText = data.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
-        document.getElementById('m-grams').innerText = data.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(2);
-        document.getElementById('m-weight').innerText = getNormalizedTotals(data);
+        filtered.sort((a, b) => {
+            let vA = parseFloat(a[currentSort.key]) || 0;
+            let vB = parseFloat(b[currentSort.key]) || 0;
+            return currentSort.asc ? vA - vB : vB - vA;
+        });
 
-        const tbody = document.getElementById('table-body');
-        tbody.innerHTML = data.map((item, idx) => `
-            <tr ondblclick="showDetails(${idx})">
-                <td><strong>${item.item_code}</strong><br><small class="text-muted">${item.item_name}</small></td>
-                <td>${parseFloat(item.weight_gram).toFixed(3)}</td>
-                <td><small>${formatBurmeseWeight(item.Net_Kyat, item.Net_Pe, item.Net_Yway)}</small></td>
-                <td class="smith-col">${formatBurmeseWeight(item.smith_wage_kyat, item.smith_wage_pe, item.smith_wage_ywe)}</td>
-                <td class="sale-col">${formatBurmeseWeight(item.sale_wage_profit_kyat, item.sale_wage_profit_pe, item.sale_wage_profit_ywe)}</td>
+        document.getElementById('m-unique').innerText = filtered.length;
+        document.getElementById('m-qty').innerText = filtered.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
+        document.getElementById('m-grams').innerText = filtered.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(3) + " g";
+        document.getElementById('m-weight').innerText = getBurmeseTotal(filtered);
+
+        document.getElementById('table-body').innerHTML = filtered.map(i => `
+            <tr ondblclick="showDetail('${i.item_code}')">
+                <td><small>${i.item_code}</small><br><strong>${i.item_name}</strong></td>
+                <td>${i.weight_gram} g</td>
+                <td><small>${formatBW(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</small></td>
+                <td class="smith-text">${formatBW(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</td>
+                <td class="sale-text">${formatBW(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</td>
             </tr>
         `).join('');
+        renderCharts(filtered);
     }
 
-    function showDetails(idx) {
-        const item = fullData[idx];
-        document.getElementById('modalTitle').innerText = item.item_code;
-        document.getElementById('modalBody').innerHTML = `
-            <div class="row g-3">
-                <div class="col-6"><label class="small opacity-50">Name</label><div>${item.item_name}</div></div>
-                <div class="col-6"><label class="small opacity-50">Category</label><div>${item.category}</div></div>
-                <div class="col-6"><label class="small opacity-50">Goldsmith</label><div>${item.goldsmith_id}</div></div>
-                <div class="col-6"><label class="small opacity-50">Purity</label><div>${item.purity}</div></div>
-                <div class="col-6"><label class="small opacity-50">Status</label><div class="badge bg-success">${item.status}</div></div>
-                <div class="col-6"><label class="small opacity-50">Location</label><div>${item.location}</div></div>
-                <div class="col-12 text-center py-2 bg-light rounded my-3 text-dark">
-                    <strong>Total Weight:</strong> ${item.weight_gram}g / ${formatBurmeseWeight(item.Net_Kyat, item.Net_Pe, item.Net_Yway)}
-                </div>
-                <div class="col-12"><label class="small opacity-50">Notes</label><div class="small">${item.notes || 'No notes available'}</div></div>
+    function showDetail(code) {
+        const i = fullData.find(x => x.item_code === code);
+        document.getElementById('modal-content').innerHTML = `
+            <div class="p-2">
+                <p><strong>Item Code:</strong> ${i.item_code}</p>
+                <p><strong>Name:</strong> ${i.item_name}</p>
+                <p><strong>Goldsmith:</strong> ${i.goldsmith_id}</p>
+                <p><strong>Category:</strong> ${i.category}</p>
+                <p><strong>Purity:</strong> ${i.purity}</p>
+                <p><strong>Location:</strong> ${i.location}</p>
+                <hr>
+                <p><strong>Status:</strong> ${i.status}</p>
+                <p><strong>Notes:</strong> ${i.notes || '-'}</p>
             </div>
         `;
-        itemModal.show();
+        new bootstrap.Modal(document.getElementById('itemModal')).show();
     }
 
-    document.getElementById('search-input').oninput = (e) => {
-        const val = e.target.value.toLowerCase();
-        const filtered = fullData.filter(i => 
-            String(i.item_code).toLowerCase().includes(val) || 
-            String(i.item_name).toLowerCase().includes(val) ||
-            String(i.goldsmith_id).toLowerCase().includes(val)
-        );
-        render(filtered);
-    };
+    function renderCharts(data) {
+        const layout = { height: 250, margin: {t:30, b:30, l:30, r:10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 10, color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#333' } };
+        
+        // Category Chart
+        const cats = [...new Set(data.map(i => i.category || 'Other'))];
+        const catVals = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + r.qty_on_hand, 0));
+        Plotly.newPlot('chart-cat', [{ x: cats, y: catVals, type: 'bar', marker: {color: '#27ae60'} }], { ...layout, title: 'Qty by Category' });
 
-    document.getElementById('chart-toggle').onchange = (e) => {
-        document.getElementById('chart-section').classList.toggle('hidden', !e.target.checked);
-    };
+        // Goldsmith Chart
+        const smiths = [...new Set(data.map(i => i.goldsmith_id || 'Unknown'))];
+        const smithWeights = smiths.map(s => data.filter(i => i.goldsmith_id === s).reduce((sum, r) => sum + parseFloat(r.weight_gram), 0));
+        Plotly.newPlot('chart-smith', [{ values: smithWeights, labels: smiths, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight by Goldsmith' });
+    }
 
+    document.getElementById('search-input').oninput = () => render(fullData);
+    document.getElementById('chart-toggle').onchange = (e) => document.getElementById('chart-section').classList.toggle('hidden', !e.target.checked);
     document.getElementById('theme-switch').onchange = (e) => {
         document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
+        render(fullData);
     };
 </script>
 </body>
