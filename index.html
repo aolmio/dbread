@@ -31,7 +31,7 @@
     .tags{display:flex;gap:.5rem;overflow:auto;padding:.5rem 0;scrollbar-width:none}
     .tags::-webkit-scrollbar{display:none}
     .drop{border:2px dashed var(--border);padding:3rem;border-radius:18px;text-align:center;cursor:pointer;background:var(--card)}
-    .badge-pill{min-width:72px}
+    .badge-pill{min-width:72px;font-size:.85rem;padding:.45rem .65rem}.net-badge{background:#2563eb!important}.smith-badge{background:#d97706!important}.profit-badge{background:#16a34a!important}@media(max-width:768px){.table{font-size:.84rem}.metric{padding:.75rem}.badge-pill{min-width:60px;font-size:.75rem}}
     .table td,.table th{vertical-align:middle}
     .hidden{display:none!important}
   </style>
@@ -68,7 +68,7 @@
     <div class="cardx p-2 mt-3">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
-          <thead><tr><th>Item</th><th>Qty</th><th id="sortGram" style="cursor:pointer">Gram ⇅</th><th>Net</th><th>Smith</th><th>Profit</th></tr></thead>
+          <thead><tr><th onclick="sortBy('item_name')" style="cursor:pointer">Item ⇅</th><th onclick="sortBy('qty_on_hand')" style="cursor:pointer">Qty ⇅</th><th id="sortGram" style="cursor:pointer">Gram ⇅</th><th onclick="sortBy('Net_Kyat')" style="cursor:pointer">Net ⇅</th><th onclick="sortBy('smith_wage_kyat')" style="cursor:pointer">Smith ⇅</th><th onclick="sortBy('sale_wage_profit_kyat')" style="cursor:pointer">Profit ⇅</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -84,7 +84,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const debounce=(fn,d=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),d)}};
 
-function bw(k,p,y){const out=[]; if(k>0) out.push(`${Math.floor(k)}k`); if(p>0) out.push(`${Math.floor(p)}p`); if(y>0) out.push(`${(+y).toFixed(1)}y`); return out.join(' ')||'0';}
+function bw(k,p,y){const out=[]; if(k>0) out.push(`${Math.floor(k)} ကျပ်`); if(p>0) out.push(`${Math.floor(p)} ပဲ`); if(y>0) out.push(`${(+y).toFixed(1)} ရွေး`); return out.join(' ')||'0'; }k`); if(p>0) out.push(`${Math.floor(p)}p`); if(y>0) out.push(`${(+y).toFixed(1)}y`); return out.join(' ')||'0';}
 function totalBW(rows){ let k=0,p=0,y=0; rows.forEach(r=>{k+=+r.Net_Kyat||0;p+=+r.Net_Pe||0;y+=+r.Net_Yway||0}); p+=Math.floor(y/8); y%=8; k+=Math.floor(p/16); p%=16; return `${k}K ${p}P ${y.toFixed(1)}Y`; }
 
 async function loadDB(file){
@@ -117,7 +117,7 @@ function render(){
   $('q').textContent=rows.reduce((s,r)=>s+(+r.qty_on_hand||0),0);
   $('g').textContent=rows.reduce((s,r)=>s+(+r.weight_gram||0),0).toFixed(2);
   $('bw').textContent=totalBW(rows);
-  $('tbody').innerHTML=rows.map(i=>`<tr ondblclick='detail(${JSON.stringify(i.item_code)})'><td><b>${esc(i.item_name)}</b><br><small>${esc(i.item_code)}</small></td><td><span class='badge text-bg-secondary badge-pill'>${i.qty_on_hand}</span></td><td>${(+i.weight_gram).toFixed(2)}g</td><td>${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</td><td>${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</td><td>${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</td></tr>`).join('');
+  $('tbody').innerHTML=rows.map(i=>`<tr ondblclick='detail(${JSON.stringify(i.item_code)})'><td><b>${esc(i.item_name)}</b><br><small>${esc(i.item_code)}</small></td><td><span class='badge text-bg-secondary badge-pill'>${i.qty_on_hand}</span></td><td>${(+i.weight_gram).toFixed(2)}g</td><td><span class='badge badge-pill net-badge'>${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</span></td><td><span class='badge badge-pill smith-badge'>${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</span></td><td><span class='badge badge-pill profit-badge'>${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</span></td></tr>`).join('');
   if(!$('charts').classList.contains('hidden')) drawCharts(rows);
 }
 
