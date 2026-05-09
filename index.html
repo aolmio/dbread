@@ -8,129 +8,96 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
         :root {
-            --bg-body: #f4f7f6;
-            --bg-card: #ffffff;
-            --text-main: #2d3436;
-            --accent-smith: #d35400; 
-            --accent-sale: #27ae60;  
-            --border-color: #dfe6e9;
+            --bg-body: #f4f7f6; --bg-card: #ffffff; --text-main: #2d3436;
+            --accent-smith: #d35400; --accent-sale: #27ae60; --border-color: #dfe6e9;
         }
-
         [data-theme="dark"] {
-            --bg-body: #0e1117;
-            --bg-card: #1d2127;
-            --text-main: #e1e1e1;
-            --border-color: #30363d;
-            --accent-smith: #ffb700;
-            --accent-sale: #00e676;
+            --bg-body: #0e1117; --bg-card: #1d2127; --text-main: #e1e1e1;
+            --border-color: #30363d; --accent-smith: #ffb700; --accent-sale: #00e676;
         }
 
         body { 
-            background-color: var(--bg-body); 
-            color: var(--text-main); 
+            background-color: var(--bg-body); color: var(--text-main); 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            transition: all 0.3s ease;
-            padding-bottom: 50px;
+            transition: all 0.3s ease; padding-bottom: 50px;
         }
 
         .metric-card {
-            background: var(--bg-card);
-            padding: 1.2rem;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            height: 100%;
+            background: var(--bg-card); padding: 1.2rem; border-radius: 16px;
+            border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: 100%; text-align: center;
         }
 
-        .metric-value { font-size: 1.2rem; font-weight: 700; }
-        .metric-label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; }
+        .metric-value { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
+        .metric-label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; margin-bottom: 4px; }
 
-        .search-container { position: sticky; top: 0; z-index: 100; background: var(--bg-body); padding: 10px 0; border-bottom: 1px solid var(--border-color); }
-        .table-container { background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); }
+        .search-container { position: sticky; top: 0; z-index: 100; background: var(--bg-body); padding: 10px 0; }
+        .table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); }
+        .table { font-size: 0.85rem; cursor: pointer; user-select: none; }
         
-        .smith-text { color: var(--accent-smith); font-weight: 600; font-size: 0.85rem; }
-        .sale-text { color: var(--accent-sale); font-weight: 600; font-size: 0.85rem; }
+        .smith-cell { color: var(--accent-smith); font-weight: 600; background: rgba(211, 84, 0, 0.05); }
+        .sale-cell { color: var(--accent-sale); font-weight: 600; background: rgba(39, 174, 96, 0.05); }
 
         #drop-area {
-            border: 2px dashed #999;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            background: var(--bg-card);
-            cursor: pointer;
+            border: 2px dashed #999; border-radius: 20px; padding: 40px;
+            text-align: center; background: var(--bg-card); cursor: pointer;
         }
-
-        .sortable { cursor: pointer; color: #007bff; text-decoration: underline; }
         .hidden { display: none !important; }
-        
-        /* Fixed Column Widths for Readability */
-        th { font-size: 0.8rem; text-transform: uppercase; }
-        td { font-size: 0.85rem; vertical-align: middle; }
+        .modal-content { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); }
     </style>
 </head>
 <body>
 
-<div class="container-fluid py-3">
+<div class="container py-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">💍 Gold Pro</h4>
+        <h3 class="mb-0">💍 Gold Pro</h3>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="theme-switch">
         </div>
     </div>
 
     <div id="drop-area" class="mb-4">
-        <p class="mb-0">📁 Tap to Upload <code>gold_stock.db</code></p>
+        <p class="mb-0">📁 Tap to Load <code>gold_stock.db</code></p>
         <input type="file" id="db-upload" class="hidden" accept=".db">
     </div>
 
     <div id="app-content" class="hidden">
-        <div class="search-container mb-3">
-            <div class="row g-2">
-                <div class="col-8">
-                    <input type="text" id="search-input" class="form-control" placeholder="Search Code, Name, Category...">
-                </div>
-                <div class="col-4 text-end">
-                    <div class="form-check form-switch d-inline-block pt-2">
-                        <input class="form-check-input" type="checkbox" id="chart-toggle">
-                        <label class="form-check-label d-none d-sm-inline" for="chart-toggle">Charts</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row g-2 mb-3">
-            <div class="col-4 col-md-2">
-                <div class="metric-card text-center">
-                    <div class="metric-label">Items</div>
-                    <div class="metric-value" id="m-unique">-</div>
+            <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-label">Stock Qty</div><div class="metric-value" id="m-qty">-</div></div></div>
+            <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-label">Total Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
+            <div class="col-12 col-md-6"><div class="metric-card"><div class="metric-label">Burmese Weight</div><div class="metric-value" id="m-weight">-</div></div></div>
+        </div>
+
+        <div class="search-container mb-3">
+            <input type="text" id="search-input" class="form-control shadow-none" placeholder="Filter items...">
+            <div class="mt-2 d-flex gap-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="chart-toggle">
+                    <label class="form-check-label small" for="chart-toggle">Charts</label>
                 </div>
-            </div>
-            <div class="col-8 col-md-10">
-                <div class="metric-card">
-                    <div class="metric-label">Total Weight</div>
-                    <div class="metric-value" id="m-weight">-</div>
-                </div>
+                <small class="text-muted">💡 Double-click row for details</small>
             </div>
         </div>
 
-        <div id="chart-section" class="row g-2 mb-3 hidden">
-            <div class="col-md-6"><div class="metric-card"><div id="chart-cat"></div></div></div>
-            <div class="col-md-6"><div class="metric-card"><div id="chart-pie"></div></div></div>
+        <div id="chart-section" class="row g-3 mb-4 hidden">
+            <div class="col-md-6"><div id="chart-cat"></div></div>
+            <div class="col-md-6"><div id="chart-pie"></div></div>
         </div>
 
-        <div class="table-container">
+        <div class="table-container shadow-sm">
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
+                <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Item Info</th>
-                            <th>Qty</th>
-                            <th class="sortable" id="sort-gram">Grams ↕</th>
-                            <th>Net (B)</th>
-                            <th>Smith</th>
-                            <th>Sale</th>
+                            <th>Item Code</th>
+                            <th>Gram</th>
+                            <th>Net Weight</th>
+                            <th>Smith Wage</th>
+                            <th>Sale Profit</th>
                         </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
@@ -140,31 +107,31 @@
     </div>
 </div>
 
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="modalTitle">Item Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-0" id="modalBody"></div>
+    </div>
+  </div>
+</div>
+
 <script>
-    let db = null;
-    let fullData = [];
-    let sortAsc = false;
+    let db = null; let fullData = [];
+    const detailModal = new Bootstrap.Modal(document.getElementById('detailModal'));
 
-    function formatBurmeseWeight(k, p, y) {
-        let parts = [];
-        if (k > 0) parts.push(`${Math.floor(k)}k`);
-        if (p > 0) parts.push(`${Math.floor(p)}p`);
-        if (y > 0) parts.push(`${y}y`);
-        return parts.length > 0 ? parts.join(" ") : "0";
+    function formatBurmese(k, p, y) {
+        let pts = [];
+        if (k > 0) pts.push(`${Math.floor(k)} ကျပ်`);
+        if (p > 0) pts.push(`${Math.floor(p)} ပဲ`);
+        if (y > 0) pts.push(`${y} ရွေး`);
+        return pts.length > 0 ? pts.join(" ") : "0";
     }
 
-    function getNormalizedTotals(data) {
-        let tk = data.reduce((s, r) => s + (parseFloat(r.Net_Kyat) || 0), 0);
-        let tp = data.reduce((s, r) => s + (parseFloat(r.Net_Pe) || 0), 0);
-        let ty = data.reduce((s, r) => s + (parseFloat(r.Net_Yway) || 0), 0);
-        tp += Math.floor(ty / 8);
-        let fy = (ty % 8).toFixed(2);
-        tk += Math.floor(tp / 16);
-        let fp = Math.floor(tp % 16);
-        return `${Math.floor(tk)} ကျပ် ${fp} ပဲ ${fy} ရွေး`;
-    }
-
-    const config = { locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` };
+    const config = { locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` };
     document.getElementById('drop-area').onclick = () => document.getElementById('db-upload').click();
     
     document.getElementById('db-upload').onchange = async function(e) {
@@ -172,95 +139,84 @@
         const reader = new FileReader();
         reader.onload = function() {
             db = new SQL.Database(new Uint8Array(reader.result));
-            processDatabase();
+            processData();
             document.getElementById('drop-area').classList.add('hidden');
             document.getElementById('app-content').classList.remove('hidden');
         };
         reader.readAsArrayBuffer(e.target.files[0]);
     };
 
-    function processDatabase() {
+    function processData() {
         const stmt = db.prepare("SELECT * FROM items");
         fullData = [];
         while(stmt.step()) {
-            let row = stmt.getAsObject();
+            let r = stmt.getAsObject();
             fullData.push({
-                ...row,
-                Net_Kyat: row['Net (ကျပ်) Net_kyat'] || 0,
-                Net_Pe: row['Net (ပဲ) Net_pae'] || 0,
-                Net_Yway: row['Net (ရွေး) Net_yway'] || 0,
-                weight_gram: parseFloat(row['weight_gram']) || 0,
-                category: String(row['category'] || 'General')
+                ...r,
+                Net_Kyat: r['Net (ကျပ်) Net_kyat'] || 0,
+                Net_Pe: r['Net (ပဲ) Net_pae'] || 0,
+                Net_Yway: r['Net (ရွေး) Net_yway'] || 0,
+                weight_gram: parseFloat(r.weight_gram) || 0
             });
         }
+        // Initial Sort by Gram Descending
+        fullData.sort((a, b) => b.weight_gram - a.weight_gram);
         render(fullData);
     }
 
     function render(data) {
-        document.getElementById('m-unique').innerText = data.length;
-        document.getElementById('m-weight').innerText = getNormalizedTotals(data);
+        // Metrics
+        document.getElementById('m-qty').innerText = data.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
+        document.getElementById('m-grams').innerText = data.reduce((s, r) => s + r.weight_gram, 0).toFixed(3) + " g";
+        
+        let tk = data.reduce((s, r) => s + (parseFloat(r.Net_Kyat) || 0), 0);
+        let tp = data.reduce((s, r) => s + (parseFloat(r.Net_Pe) || 0), 0);
+        let ty = data.reduce((s, r) => s + (parseFloat(r.Net_Yway) || 0), 0);
+        tp += Math.floor(ty / 8); ty = (ty % 8).toFixed(2);
+        tk += Math.floor(tp / 16); tp = Math.floor(tp % 16);
+        document.getElementById('m-weight').innerText = `${Math.floor(tk)} ကျပ် ${tp} ပဲ ${ty} ရွေး`;
 
+        // Table with separate columns
         const tbody = document.getElementById('table-body');
-        tbody.innerHTML = data.map(item => `
-            <tr>
-                <td>
-                    <strong>${item.item_code}</strong><br>
-                    <span class="badge bg-secondary" style="font-size: 0.6rem;">${item.category}</span>
-                </td>
-                <td>${item.qty_on_hand}</td>
-                <td><strong>${item.weight_gram.toFixed(2)}</strong></td>
-                <td><small>${formatBurmeseWeight(item.Net_Kyat, item.Net_Pe, item.Net_Yway)}</small></td>
-                <td class="smith-text">${formatBurmeseWeight(item.smith_wage_kyat, item.smith_wage_pe, item.smith_wage_ywe)}</td>
-                <td class="sale-text">${formatBurmeseWeight(item.sale_wage_profit_kyat, item.sale_wage_profit_pe, item.sale_wage_profit_ywe)}</td>
+        tbody.innerHTML = data.map((item, idx) => `
+            <tr ondblclick="showDetails(${idx})">
+                <td><strong>${item.item_code}</strong><br><small class="text-muted">${item.item_name}</small></td>
+                <td>${item.weight_gram.toFixed(2)}g</td>
+                <td><small>${formatBurmese(item.Net_Kyat, item.Net_Pe, item.Net_Yway)}</small></td>
+                <td class="smith-cell">${formatBurmese(item.smith_wage_kyat, item.smith_wage_pe, item.smith_wage_ywe)}</td>
+                <td class="sale-cell">${formatBurmese(item.sale_wage_profit_kyat, item.sale_wage_profit_pe, item.sale_wage_profit_ywe)}</td>
             </tr>
         `).join('');
-
-        if(!document.getElementById('chart-section').classList.contains('hidden')) {
-            renderCharts(data);
-        }
     }
 
-    function renderCharts(data) {
-        const cats = [...new Set(data.map(i => i.category))];
-        const qtyVals = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + r.qty_on_hand, 0));
-        const theme = document.documentElement.getAttribute('data-theme');
-        const textColor = theme === 'dark' ? '#fff' : '#333';
+    window.showDetails = (idx) => {
+        const item = fullData[idx];
+        document.getElementById('modalTitle').innerText = item.item_code;
+        document.getElementById('modalBody').innerHTML = `
+            <div class="row g-3">
+                <div class="col-6"><label class="small opacity-50">Item Name</label><div>${item.item_name}</div></div>
+                <div class="col-6"><label class="small opacity-50">Goldsmith</label><div>${item.goldsmith_id || 'N/A'}</div></div>
+                <div class="col-6"><label class="small opacity-50">Purity</label><div>${item.purity || '-'}</div></div>
+                <div class="col-6"><label class="small opacity-50">Status</label><div>${item.status || '-'}</div></div>
+                <div class="col-12"><label class="small opacity-50">Location</label><div>${item.location || '-'}</div></div>
+                <div class="col-12"><hr class="my-1"></div>
+                <div class="col-12"><label class="small opacity-50">Notes</label><div>${item.notes || 'No notes available.'}</div></div>
+            </div>
+        `;
+        detailModal.show();
+    };
 
-        const layout = { 
-            height: 220, margin: {t:30, b:30, l:30, r:10}, 
-            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-            font: { color: textColor, size: 9 }
-        };
-
-        Plotly.newPlot('chart-cat', [{ x: cats, y: qtyVals, type: 'bar', marker: {color: '#d35400'} }], { ...layout, title: 'Category Qty' });
-        Plotly.newPlot('chart-pie', [{ values: qtyVals, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Distribution' });
-    }
-
-    // --- SEARCH & SORT LOGIC ---
     document.getElementById('search-input').oninput = (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = fullData.filter(i => 
             String(i.item_code).toLowerCase().includes(term) || 
-            String(i.item_name).toLowerCase().includes(term) ||
-            String(i.category).toLowerCase().includes(term)
+            String(i.item_name).toLowerCase().includes(term)
         );
         render(filtered);
     };
 
-    document.getElementById('sort-gram').onclick = () => {
-        sortAsc = !sortAsc;
-        const sorted = [...fullData].sort((a, b) => sortAsc ? a.weight_gram - b.weight_gram : b.weight_gram - a.weight_gram);
-        render(sorted);
-    };
-
-    document.getElementById('chart-toggle').onchange = (e) => {
-        document.getElementById('chart-section').classList.toggle('hidden', !e.target.checked);
-        if(e.target.checked) renderCharts(fullData);
-    };
-
     document.getElementById('theme-switch').onchange = (e) => {
         document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
-        if(fullData.length > 0) renderCharts(fullData);
     };
 </script>
 </body>
