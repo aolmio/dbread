@@ -165,11 +165,12 @@ function detail(code){
 function drawCharts(rows){
   const cats=[...new Set(rows.map(x=>x.category||'Other'))];
   const qty=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
+  const catWeights=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.weight_gram||0),0));
   const smith=[...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
   const grams=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.weight_gram||0),0));
-  const L={height:260,margin:{t:40,l:20,r:20,b:30},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)'};
+  const L={height:280,margin:{t:40,l:20,r:20,b:30},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{size:12}};
   Plotly.react('c1',[{x:cats,y:qty,type:'bar'}],{...L,title:'Qty by Category'});
-  Plotly.react('c2',[{labels:cats,values:qty,type:'pie',hole:.45}],{...L,title:'Stock Distribution'});
+  Plotly.react('c2',[{labels:cats,values:catWeights,type:'pie',hole:.45,textinfo:'label+percent'}],{...L,title:'Weight by Category'});
   Plotly.react('c3',[{labels:smith,values:grams,type:'pie',hole:.45}],{...L,title:'Gram by Smith'});
 }
 
