@@ -1,13 +1,13 @@
 {
   "name": "Gold Inventory Pro",
-  "short_name": "GoldPro",
+  "short_name": "GoldInv",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#f39c12",
+  "background_color": "#0e1117",
+  "description": "Burmese Gold Inventory Management System",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2991/2991148.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2697/2697330.png",
       "sizes": "512x512",
       "type": "image/png"
     }
