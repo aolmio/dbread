@@ -22,6 +22,8 @@
     }
     body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;transition:.2s}
     .cardx{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
+    .modal-content{background:var(--card)!important;color:var(--text)!important;border:1px solid var(--border)!important}
+    .alert-light{background:var(--bg)!important;color:var(--text)!important;border-color:var(--border)!important}
     .metric{padding:1rem;text-align:center;height:100%}
     .metric .v{font-weight:800;font-size:clamp(1.05rem,2vw,1.8rem);color:var(--primary);line-height:1.2}
     .metric .l{font-size:.75rem;color:var(--muted);text-transform:uppercase}
@@ -95,7 +97,7 @@
 <div class="modal fade" id="detailModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4" id="modalBody"></div></div></div>
 
 <script>
-let db=null,data=[],selected='All',sort={key:'weight_gram',asc:false};
+let db=null,data=[],selected=new Set(['All']),sort={key:'weight_gram',asc:false};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const debounce=(fn,d=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),d)}};
@@ -133,12 +135,22 @@ async function loadDB(file){
   $('drop').classList.add('hidden'); $('app').classList.remove('hidden'); render();
 }
 
-function setCat(c,el){selected=c; document.querySelectorAll('.tag').forEach(x=>x.classList.remove('active')); el.classList.add('active'); render();}
+function setCat(c,el){
+  if(c==='All'){ selected=new Set(['All']); document.querySelectorAll('.tag').forEach(x=>x.classList.remove('active')); el.classList.add('active'); }
+  else {
+    selected.delete('All');
+    if(selected.has(c)){ selected.delete(c); el.classList.remove('active'); }
+    else { selected.add(c); el.classList.add('active'); }
+    if(selected.size===0){ selected=new Set(['All']); document.querySelectorAll('.tag')[0].classList.add('active'); }
+    document.querySelectorAll('.tag').forEach(x=>{ if(x.textContent==='All' && !selected.has('All')) x.classList.remove('active'); });
+  }
+  render();
+}
 function sortBy(k){sort.asc=(sort.key===k)?!sort.asc:false; sort.key=k; render();}
 
 function filtered(){
   const t=$('search').value.toLowerCase();
-  return data.filter(i=>(selected==='All'||i.category===selected)&&(`${i.item_code} ${i.item_name} ${i.goldsmith_id}`.toLowerCase().includes(t)))
+  return data.filter(i=>(selected.has('All')||selected.has(i.category))&&(`${i.item_code} ${i.item_name} ${i.goldsmith_id}`.toLowerCase().includes(t)))
     .sort((a,b)=>{
       const va=a[sort.key], vb=b[sort.key];
       if(!isNaN(va) && !isNaN(vb)) return sort.asc ? (+va - +vb) : (+vb - +va);
@@ -167,11 +179,11 @@ function drawCharts(rows){
   const qty=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
   const catWeights=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.weight_gram||0),0));
   const smith=[...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
-  const grams=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.weight_gram||0),0));
+  const smithQty=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
   const L={height:280,margin:{t:40,l:20,r:20,b:30},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{size:12}};
   Plotly.react('c1',[{x:cats,y:qty,type:'bar'}],{...L,title:'Qty by Category'});
   Plotly.react('c2',[{labels:cats,values:catWeights,type:'pie',hole:.45,textinfo:'label+percent'}],{...L,title:'Weight by Category'});
-  Plotly.react('c3',[{labels:smith,values:grams,type:'pie',hole:.45}],{...L,title:'Gram by Smith'});
+  Plotly.react('c3',[{labels:smith,values:smithQty,type:'pie',hole:.45,textinfo:'label+percent'}],{...L,title:'Qty by Smith'});
 }
 
 $('drop').onclick=()=>$('file').click();
