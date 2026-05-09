@@ -13,7 +13,8 @@
     <style>
         :root {
             --bg-body: #f4f7f6; --bg-card: #ffffff; --text-main: #2d3436;
-            --accent-smith: #d35400; --accent-sale: #27ae60; --accent-net: #2980b9; --border-color: #dfe6e9;
+            --accent-smith: #d35400; --accent-sale: #27ae60; --accent-net: #2980b9;
+            --border-color: #dfe6e9;
         }
         [data-theme="dark"] {
             --bg-body: #0e1117; --bg-card: #1d2127; --text-main: #e1e1e1;
@@ -21,22 +22,22 @@
         }
 
         body { background-color: var(--bg-body); color: var(--text-main); font-family: sans-serif; transition: 0.3s; padding-bottom: 30px; }
-        .metric-card { background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color); height: 100%; text-align: center; }
-        .metric-value { font-size: 1.1rem; font-weight: 700; }
-        .metric-label { font-size: 0.7rem; opacity: 0.7; text-transform: uppercase; }
+        .metric-card { background: var(--bg-card); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); height: 100%; text-align: center; }
+        .metric-value { font-size: 1.2rem; font-weight: 700; }
+        .metric-label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; }
+
+        /* Highlight Boxes for Table Data */
+        .badge-weight { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; color: #fff !important; margin: 2px 0; }
+        .bg-net { background-color: var(--accent-net); }
+        .bg-smith { background-color: var(--accent-smith); }
+        .bg-sale { background-color: var(--accent-sale); }
 
         .search-container { position: sticky; top: 0; z-index: 100; background: var(--bg-body); padding: 10px 0; border-bottom: 1px solid var(--border-color); }
         .table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); margin-top: 15px; }
         
-        /* Highlighted Text Colors */
-        .net-text { color: var(--accent-net); font-weight: 600; }
-        .smith-text { color: var(--accent-smith); font-weight: 600; }
-        .sale-text { color: var(--accent-sale); font-weight: 600; }
-        
         #drop-area { border: 2px dashed #999; border-radius: 15px; padding: 30px; text-align: center; background: var(--bg-card); cursor: pointer; }
         .hidden { display: none !important; }
-        tr { cursor: pointer; user-select: none; }
-        th { cursor: pointer; background-color: rgba(0,0,0,0.05) !important; font-size: 0.8rem; }
+        tr { cursor: pointer; }
     </style>
 </head>
 <body>
@@ -59,21 +60,21 @@
             <input type="text" id="search-input" class="form-control mb-2" placeholder="Search item, code, or goldsmith...">
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="chart-toggle">
-                <label class="form-check-label ms-1" for="chart-toggle">Show Infographics</label>
+                <label class="form-check-label ms-1" for="chart-toggle">Show Analytics</label>
             </div>
         </div>
 
-        <div class="row g-2 mb-3">
+        <div class="row g-2 mb-4">
             <div class="col-4 col-md-2"><div class="metric-card"><div class="metric-label">Items</div><div class="metric-value" id="m-unique">-</div></div></div>
-            <div class="col-4 col-md-2"><div class="metric-card"><div class="metric-label">Qty</div><div class="metric-value" id="m-qty">-</div></div></div>
-            <div class="col-4 col-md-3"><div class="metric-card"><div class="metric-label">Total Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
-            <div class="col-12 col-md-5"><div class="metric-card"><div class="metric-label">Total Burmese Weight</div><div class="metric-value net-text" id="m-weight">-</div></div></div>
+            <div class="col-4 col-md-2"><div class="metric-card"><div class="metric-label">Stock</div><div class="metric-value" id="m-qty">-</div></div></div>
+            <div class="col-4 col-md-3"><div class="metric-card"><div class="metric-label">Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
+            <div class="col-12 col-md-5"><div class="metric-card"><div class="metric-label">Burmese Total</div><div class="metric-value" id="m-weight">-</div></div></div>
         </div>
 
-        <div id="chart-section" class="row g-2 mb-4 hidden">
-            <div class="col-12 col-md-4"><div class="metric-card"><div id="chart-cat"></div></div></div>
-            <div class="col-12 col-md-4"><div class="metric-card"><div id="chart-dist"></div></div></div>
-            <div class="col-12 col-md-4"><div class="metric-card"><div id="chart-smith"></div></div></div>
+        <div id="chart-section" class="row g-3 mb-4 hidden">
+            <div class="col-md-4"><div class="metric-card"><div id="chart-cat"></div></div></div>
+            <div class="col-md-4"><div class="metric-card"><div id="chart-pie"></div></div></div>
+            <div class="col-md-4"><div class="metric-card"><div id="chart-smith"></div></div></div>
         </div>
 
         <div class="table-container">
@@ -82,13 +83,13 @@
                     <thead class="table-light">
                         <tr>
                             <th>Item/Code</th>
-                            <th onclick="toggleSort('weight_gram')">Grams ⇅</th>
+                            <th onclick="toggleSort('weight_gram')">Gram ⇅</th>
                             <th>Net Weight</th>
                             <th>Smith Wage</th>
                             <th>Sale Profit</th>
                         </tr>
                     </thead>
-                    <tbody id="table-body" style="font-size: 0.85rem;"></tbody>
+                    <tbody id="table-body"></tbody>
                 </table>
             </div>
         </div>
@@ -98,7 +99,7 @@
 <div class="modal fade" id="itemModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background: var(--bg-card); color: var(--text-main);">
-            <div class="modal-header border-0"><h5 class="modal-title">📦 Item Deep Dive</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header border-0"><h5 class="modal-title">Item Detail</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body" id="modal-content"></div>
         </div>
     </div>
@@ -107,7 +108,6 @@
 <script>
     let db = null, fullData = [], currentSort = { key: 'weight_gram', asc: false };
 
-    // Format Burmese Weight
     function formatBW(k, p, y) {
         let res = [];
         if (k > 0) res.push(`${Math.floor(k)}ကျပ်`);
@@ -116,7 +116,6 @@
         return res.length > 0 ? res.join(" ") : "0";
     }
 
-    // Normalized Burmese Totals
     function getBurmeseTotal(data) {
         let tk = data.reduce((s, r) => s + (parseFloat(r.Net_Kyat) || 0), 0);
         let tp = data.reduce((s, r) => s + (parseFloat(r.Net_Pe) || 0), 0);
@@ -128,29 +127,29 @@
 
     const config = { locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` };
     document.getElementById('drop-area').onclick = () => document.getElementById('db-upload').click();
-    
     document.getElementById('db-upload').onchange = async (e) => {
         const SQL = await initSqlJs(config);
         const reader = new FileReader();
         reader.onload = () => {
             db = new SQL.Database(new Uint8Array(reader.result));
-            const stmt = db.prepare("SELECT * FROM items");
-            fullData = [];
-            while(stmt.step()) {
-                let r = stmt.getAsObject();
-                // Map original Net column names
-                fullData.push({ ...r, 
-                    Net_Kyat: r['Net (ကျပ်) Net_kyat'] || 0, 
-                    Net_Pe: r['Net (ပဲ) Net_pae'] || 0, 
-                    Net_Yway: r['Net (ရွေး) Net_yway'] || 0 
-                });
-            }
+            loadDB();
             document.getElementById('drop-area').classList.add('hidden');
             document.getElementById('app-content').classList.remove('hidden');
-            render(fullData);
         };
         reader.readAsArrayBuffer(e.target.files[0]);
     };
+
+    function loadDB() {
+        const stmt = db.prepare("SELECT * FROM items");
+        fullData = [];
+        while(stmt.step()) {
+            let r = stmt.getAsObject();
+            fullData.push({ ...r, 
+                Net_Kyat: r['Net (ကျပ်) Net_kyat'] || 0, Net_Pe: r['Net (ပဲ) Net_pae'] || 0, Net_Yway: r['Net (ရွေး) Net_yway'] || 0 
+            });
+        }
+        render(fullData);
+    }
 
     function toggleSort(key) {
         currentSort.asc = currentSort.key === key ? !currentSort.asc : false;
@@ -174,54 +173,50 @@
 
         document.getElementById('m-unique').innerText = filtered.length;
         document.getElementById('m-qty').innerText = filtered.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
-        document.getElementById('m-grams').innerText = filtered.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(3) + " g";
+        document.getElementById('m-grams').innerText = filtered.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(2) + "g";
         document.getElementById('m-weight').innerText = getBurmeseTotal(filtered);
 
         document.getElementById('table-body').innerHTML = filtered.map(i => `
             <tr ondblclick="showDetail('${i.item_code}')">
-                <td><small class="text-muted">${i.item_code}</small><br><strong>${i.item_name}</strong></td>
-                <td><strong>${i.weight_gram}</strong> g</td>
-                <td class="net-text">${formatBW(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</td>
-                <td class="smith-text">${formatBW(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</td>
-                <td class="sale-text">${formatBW(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</td>
+                <td><small>${i.item_code}</small><br><strong>${i.item_name}</strong></td>
+                <td><strong>${i.weight_gram}</strong></td>
+                <td><span class="badge-weight bg-net">${formatBW(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</span></td>
+                <td><span class="badge-weight bg-smith">${formatBW(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</span></td>
+                <td><span class="badge-weight bg-sale">${formatBW(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</span></td>
             </tr>
         `).join('');
-        if(!document.getElementById('chart-section').classList.contains('hidden')) renderCharts(filtered);
+        renderCharts(filtered);
     }
 
     function showDetail(code) {
         const i = fullData.find(x => x.item_code === code);
         document.getElementById('modal-content').innerHTML = `
-            <div class="row g-3">
-                <div class="col-6"><small class="text-muted">Item Name</small><br>${i.item_name}</div>
-                <div class="col-6"><small class="text-muted">Goldsmith</small><br>${i.goldsmith_id}</div>
-                <div class="col-6"><small class="text-muted">Category</small><br>${i.category}</div>
-                <div class="col-6"><small class="text-muted">Purity</small><br>${i.purity}</div>
-                <div class="col-12"><small class="text-muted">Location</small><br>${i.location}</div>
-                <div class="col-12 bg-light p-2 rounded"><small class="text-muted">Notes</small><br>${i.notes || 'No notes available.'}</div>
+            <div class="p-1">
+                <p><strong>Code/Name:</strong> ${i.item_code} - ${i.item_name}</p>
+                <p><strong>Goldsmith:</strong> ${i.goldsmith_id}</p>
+                <p><strong>Category:</strong> ${i.category} | <strong>Purity:</strong> ${i.purity}</p>
+                <p><strong>Location:</strong> ${i.location} | <strong>Status:</strong> ${i.status}</p>
+                <hr>
+                <p><strong>Notes:</strong> ${i.notes || 'No notes available'}</p>
             </div>
         `;
         new bootstrap.Modal(document.getElementById('itemModal')).show();
     }
 
     function renderCharts(data) {
-        const theme = document.documentElement.getAttribute('data-theme');
-        const textColor = theme === 'dark' ? '#fff' : '#333';
-        const layout = { height: 220, margin: {t:40, b:20, l:20, r:20}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 9, color: textColor } };
+        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#333';
+        const layout = { height: 220, margin: {t:30, b:20, l:20, r:10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 9, color: theme } };
         
-        // 1. Category Chart (Qty)
         const cats = [...new Set(data.map(i => i.category || 'Other'))];
         const catQty = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + r.qty_on_hand, 0));
-        Plotly.newPlot('chart-cat', [{ x: cats, y: catQty, type: 'bar', marker: {color: '#3498db'} }], { ...layout, title: 'Qty by Category' });
+        const catWeight = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + parseFloat(r.weight_gram), 0));
 
-        // 2. Weight Distribution (Pie)
-        const weightVals = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + parseFloat(r.weight_gram), 0));
-        Plotly.newPlot('chart-dist', [{ values: weightVals, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight Dist.' });
-
-        // 3. Goldsmith Analysis (New)
-        const smiths = [...new Set(data.map(i => i.goldsmith_id || 'N/A'))];
+        const smiths = [...new Set(data.map(i => i.goldsmith_id || 'Unknown'))];
         const smithWeights = smiths.map(s => data.filter(i => i.goldsmith_id === s).reduce((sum, r) => sum + parseFloat(r.weight_gram), 0));
-        Plotly.newPlot('chart-smith', [{ x: smiths, y: smithWeights, type: 'bar', marker: {color: '#d35400'} }], { ...layout, title: 'Weight by Smith' });
+
+        Plotly.newPlot('chart-cat', [{ x: cats, y: catQty, type: 'bar', marker: {color: '#2980b9'} }], { ...layout, title: 'Qty/Category' });
+        Plotly.newPlot('chart-pie', [{ values: catWeight, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight/Category' });
+        Plotly.newPlot('chart-smith', [{ values: smithWeights, labels: smiths, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight/Goldsmith' });
     }
 
     document.getElementById('search-input').oninput = () => render(fullData);
