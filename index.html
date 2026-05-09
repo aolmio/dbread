@@ -12,89 +12,76 @@
     
     <style>
         :root {
-            --bg-body: #f1f3f5; --bg-card: #ffffff; --text-main: #212529;
-            --accent-smith: #e67e22; --accent-sale: #27ae60; --accent-net: #2980b9; --accent-qty: #6f42c1;
-            --border-color: #dee2e6;
+            --bg-body: #f4f7f6; --bg-card: #ffffff; --text-main: #2d3436;
+            --accent-smith: #d35400; --accent-sale: #27ae60; --accent-net: #2980b9; --accent-qty: #6c5ce7;
+            --border-color: #dfe6e9;
         }
         [data-theme="dark"] {
-            --bg-body: #0b0e11; --bg-card: #161b22; --text-main: #c9d1d9;
-            --border-color: #30363d; --accent-smith: #f39c12; --accent-sale: #2ecc71; --accent-net: #3498db; --accent-qty: #a29bfe;
+            --bg-body: #0e1117; --bg-card: #1d2127; --text-main: #e1e1e1;
+            --border-color: #30363d; --accent-smith: #ffb700; --accent-sale: #00e676; --accent-net: #3498db; --accent-qty: #a29bfe;
         }
 
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: -apple-system, sans-serif; transition: 0.3s; padding-bottom: env(safe-area-inset-bottom); }
-        
-        /* Metric Cards */
-        .metric-card { background: var(--bg-card); padding: 1rem; border-radius: 14px; border: 1px solid var(--border-color); text-align: center; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .metric-value { font-size: 1.15rem; font-weight: 800; color: var(--text-main); }
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: sans-serif; transition: 0.3s; padding-bottom: 30px; }
+        .metric-card { background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color); height: 100%; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .metric-value { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
         .metric-label { font-size: 0.7rem; opacity: 0.7; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
 
-        /* Colored Item Badges */
-        .badge-box { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; color: #fff !important; margin: 2px; min-width: 65px; justify-content: center; }
+        /* Colored Badges for Table */
+        .badge-box { display: inline-block; padding: 3px 7px; border-radius: 5px; font-weight: 600; font-size: 0.8rem; color: #fff !important; margin: 2px 0; min-width: 65px; text-align: center; }
         .bg-net { background-color: var(--accent-net); }
         .bg-smith { background-color: var(--accent-smith); }
         .bg-sale { background-color: var(--accent-sale); }
         .bg-qty { background-color: var(--accent-qty); }
 
-        /* Search & Navigation */
-        .sticky-header { position: sticky; top: 0; z-index: 1000; background: var(--bg-body); padding: 12px 0; border-bottom: 1px solid var(--border-color); }
-        .search-input { border-radius: 10px; border: 1px solid var(--border-color); padding: 12px; font-size: 1rem; }
-
-        .table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); margin-top: 10px; overflow: hidden; }
-        .table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-top: none; }
+        .search-container { position: sticky; top: 0; z-index: 100; background: var(--bg-body); padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+        .table-container { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); margin-top: 10px; }
         
-        #drop-area { border: 2px dashed #adb5bd; border-radius: 15px; padding: 40px 20px; text-align: center; background: var(--bg-card); margin: 20px 0; }
+        #drop-area { border: 2px dashed #999; border-radius: 15px; padding: 30px; text-align: center; background: var(--bg-card); cursor: pointer; }
         .hidden { display: none !important; }
         
-        /* Category Pill Tags */
-        .cat-tag { font-size: 0.65rem; background: rgba(128,128,128,0.1); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+        /* Mobile Table Optimization */
+        .table { font-size: 0.85rem; }
+        th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid px-3">
-    <div class="d-flex justify-content-between align-items-center pt-3 mb-2">
-        <h5 class="fw-bold mb-0">💍 Gold Inventory Pro</h5>
+<div class="container py-2">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">💍 Gold Inventory Pro</h5>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="theme-switch">
         </div>
     </div>
 
-    <div id="drop-area">
-        <p class="mb-0 text-muted">Tap to load <b>gold_stock.db</b></p>
+    <div id="drop-area" class="mb-3">
+        <p class="mb-0">📁 Tap to Upload <code>gold_stock.db</code></p>
         <input type="file" id="db-upload" class="hidden" accept=".db">
     </div>
 
     <div id="app-content" class="hidden">
-        <div class="sticky-header">
-            <input type="text" id="search-input" class="form-control search-input" placeholder="Search code, name, smith or category...">
-            <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="chart-toggle">
-                    <label class="form-check-label small ms-1" for="chart-toggle">Analytics</label>
+        <div class="search-container mb-3">
+            <div class="row g-2">
+                <div class="col-7">
+                    <input type="text" id="search-input" class="form-control form-control-sm" placeholder="Search code/name/smith...">
                 </div>
-                <div id="active-count" class="small text-muted"></div>
+                <div class="col-5">
+                    <select id="category-filter" class="form-select form-select-sm">
+                        <option value="All">All Categories</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="chart-toggle">
+                <label class="form-check-label small ms-1" for="chart-toggle">Analytics</label>
             </div>
         </div>
 
-        <div class="row g-2 my-3">
-            <div class="col-6 col-md-3">
-                <div class="metric-card">
-                    <div class="metric-label">Stock Qty</div>
-                    <div class="metric-value text-primary" id="m-qty">-</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="metric-card">
-                    <div class="metric-label">Total Grams</div>
-                    <div class="metric-value" id="m-grams">-</div>
-                </div>
-            </div>
-            <div class="col-12 col-md-6">
-                <div class="metric-card">
-                    <div class="metric-label">Burmese Total Weight</div>
-                    <div class="metric-value small" id="m-weight">-</div>
-                </div>
-            </div>
+        <div class="row g-2 mb-3">
+            <div class="col-3"><div class="metric-card"><div class="metric-label">Items</div><div class="metric-value" id="m-unique">-</div></div></div>
+            <div class="col-3"><div class="metric-card"><div class="metric-label">Stock Qty</div><div class="metric-value" id="m-qty">-</div></div></div>
+            <div class="col-6"><div class="metric-card"><div class="metric-label">Total Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
+            <div class="col-12"><div class="metric-card"><div class="metric-label">Burmese Total Net Weight</div><div class="metric-value" id="m-weight">-</div></div></div>
         </div>
 
         <div id="chart-section" class="row g-2 mb-3 hidden">
@@ -108,9 +95,10 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th style="min-width: 120px;">Product</th>
+                            <th>Item/Qty</th>
                             <th onclick="toggleSort('weight_gram')">Gram ⇅</th>
-                            <th>Weights & Wages</th>
+                            <th>Net Weight</th>
+                            <th>Wages/Profit</th>
                         </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
@@ -120,21 +108,38 @@
     </div>
 </div>
 
-<div class="modal fade" id="itemModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background: var(--bg-card); color: var(--text-main); border-radius: 15px;"><div class="modal-body" id="modal-content"></div></div></div></div>
+<div class="modal fade" id="itemModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--bg-card); color: var(--text-main);">
+            <div class="modal-header border-0"><h6 class="modal-title font-weight-bold">Item Detail</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body pt-0" id="modal-content"></div>
+        </div>
+    </div>
+</div>
 
 <script>
     let db = null, fullData = [], currentSort = { key: 'weight_gram', asc: false };
 
     function formatBW(k, p, y) {
         let res = [];
-        if (k > 0) res.push(`${Math.floor(k)}k`);
-        if (p > 0) res.push(`${Math.floor(p)}p`);
-        if (y > 0) res.push(`${y}y`);
-        return res.length > 0 ? res.join(" ") : "0";
+        if (k > 0) res.push(`${Math.floor(k)}က`);
+        if (p > 0) res.push(`${Math.floor(p)}ပ`);
+        if (y > 0) res.push(`${y}ရ`);
+        return res.length > 0 ? res.join("") : "0";
+    }
+
+    function getBurmeseTotal(data) {
+        let tk = data.reduce((s, r) => s + (parseFloat(r.Net_Kyat) || 0), 0);
+        let tp = data.reduce((s, r) => s + (parseFloat(r.Net_Pe) || 0), 0);
+        let ty = data.reduce((s, r) => s + (parseFloat(r.Net_Yway) || 0), 0);
+        tp += Math.floor(ty / 8); ty %= 8;
+        tk += Math.floor(tp / 16); tp %= 16;
+        return `${Math.floor(tk)} ကျပ် ${Math.floor(tp)} ပဲ ${ty.toFixed(2)} ရွေး`;
     }
 
     const config = { locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` };
     document.getElementById('drop-area').onclick = () => document.getElementById('db-upload').click();
+    
     document.getElementById('db-upload').onchange = async (e) => {
         const SQL = await initSqlJs(config);
         const reader = new FileReader();
@@ -150,90 +155,105 @@
     function loadDB() {
         const stmt = db.prepare("SELECT * FROM items");
         fullData = [];
+        const cats = new Set();
         while(stmt.step()) {
             let r = stmt.getAsObject();
-            fullData.push({ ...r, 
+            let item = { ...r, 
                 Net_Kyat: r['Net (ကျပ်) Net_kyat'] || 0, Net_Pe: r['Net (ပဲ) Net_pae'] || 0, Net_Yway: r['Net (ရွေး) Net_yway'] || 0 
-            });
+            };
+            fullData.push(item);
+            if(item.category) cats.add(item.category);
         }
+        
+        // Fill Category Filter
+        const catSelect = document.getElementById('category-filter');
+        cats.forEach(c => {
+            let opt = document.createElement('option');
+            opt.value = opt.text = c;
+            catSelect.add(opt);
+        });
         render();
     }
 
     function toggleSort(key) {
-        currentSort.asc = currentSort.key === key ? !currentSort.asc : false;
+        currentSort.asc = (currentSort.key === key) ? !currentSort.asc : false;
         currentSort.key = key;
         render();
     }
 
     function render() {
         const term = document.getElementById('search-input').value.toLowerCase();
-        let filtered = fullData.filter(i => 
-            [i.item_code, i.item_name, i.goldsmith_id, i.category].some(v => String(v).toLowerCase().includes(term))
-        );
+        const catFilter = document.getElementById('category-filter').value;
 
-        filtered.sort((a, b) => (currentSort.asc ? 1 : -1) * ((parseFloat(a[currentSort.key]) || 0) - (parseFloat(b[currentSort.key]) || 0)));
+        let filtered = fullData.filter(i => {
+            const matchesSearch = String(i.item_code).toLowerCase().includes(term) || 
+                                  String(i.item_name).toLowerCase().includes(term) ||
+                                  String(i.goldsmith_id).toLowerCase().includes(term);
+            const matchesCat = catFilter === "All" || i.category === catFilter;
+            return matchesSearch && matchesCat;
+        });
 
-        // Update Metrics
-        const totalQty = filtered.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
-        document.getElementById('m-qty').innerText = totalQty;
-        document.getElementById('m-grams').innerText = filtered.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(2) + "g";
-        document.getElementById('active-count').innerText = `${filtered.length} items found`;
+        filtered.sort((a, b) => {
+            let vA = parseFloat(a[currentSort.key]) || 0;
+            let vB = parseFloat(b[currentSort.key]) || 0;
+            return currentSort.asc ? vA - vB : vB - vA;
+        });
 
-        // Render Table
+        // Update Dashboard
+        document.getElementById('m-unique').innerText = filtered.length;
+        document.getElementById('m-qty').innerText = filtered.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
+        document.getElementById('m-grams').innerText = filtered.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(2) + " g";
+        document.getElementById('m-weight').innerText = getBurmeseTotal(filtered);
+
+        // Update Table
         document.getElementById('table-body').innerHTML = filtered.map(i => `
-            <tr onclick="showDetail('${i.item_code}')">
+            <tr ondblclick="showDetail('${i.item_code}')">
                 <td>
-                    <span class="fw-bold">${i.item_name}</span><br>
-                    <small class="text-muted">${i.item_code}</small><br>
-                    <span class="cat-tag">${i.category || 'General'}</span>
+                    <strong>${i.item_name}</strong><br>
+                    <span class="badge-box bg-qty">Qty: ${i.qty_on_hand}</span>
                 </td>
-                <td><span class="badge-box bg-qty">${i.qty_on_hand} pcs</span><br><b>${i.weight_gram}g</b></td>
+                <td><strong>${i.weight_gram}</strong></td>
+                <td><span class="badge-box bg-net">${formatBW(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</span></td>
                 <td>
-                    <div class="d-flex flex-wrap">
-                        <span class="badge-box bg-net" title="Net">${formatBW(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</span>
-                        <span class="badge-box bg-smith" title="Smith">${formatBW(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</span>
-                        <span class="badge-box bg-sale" title="Profit">${formatBW(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</span>
-                    </div>
+                    <span class="badge-box bg-smith">${formatBW(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</span><br>
+                    <span class="badge-box bg-sale">${formatBW(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</span>
                 </td>
             </tr>
         `).join('');
-        if(!document.getElementById('chart-section').classList.contains('hidden')) renderCharts(filtered);
+        renderCharts(filtered);
     }
 
     function showDetail(code) {
         const i = fullData.find(x => x.item_code === code);
         document.getElementById('modal-content').innerHTML = `
-            <h6 class="fw-bold mb-3">${i.item_name} (${i.item_code})</h6>
-            <table class="table table-sm border-0 small">
-                <tr><td class="text-muted">Smith</td><td>${i.goldsmith_id}</td></tr>
-                <tr><td class="text-muted">Category</td><td>${i.category}</td></tr>
-                <tr><td class="text-muted">Purity</td><td>${i.purity}</td></tr>
-                <tr><td class="text-muted">Location</td><td>${i.location}</td></tr>
-                <tr><td class="text-muted">Status</td><td>${i.status}</td></tr>
-            </table>
-            <div class="mt-2 p-2 bg-light rounded small text-dark">${i.notes || 'No notes available.'}</div>
-            <button class="btn btn-dark btn-sm w-100 mt-3 rounded-pill" data-bs-dismiss="modal">Close</button>
+            <div class="small">
+                <p class="mb-1"><strong>Code:</strong> ${i.item_code} | <strong>Smith:</strong> ${i.goldsmith_id}</p>
+                <p class="mb-1"><strong>Cat:</strong> ${i.category} | <strong>Purity:</strong> ${i.purity}</p>
+                <p class="mb-1"><strong>Location:</strong> ${i.location} | <strong>Status:</strong> ${i.status}</p>
+                <hr class="my-1">
+                <p class="mb-0 text-muted italic">${i.notes || 'No specific notes.'}</p>
+            </div>
         `;
         new bootstrap.Modal(document.getElementById('itemModal')).show();
     }
 
     function renderCharts(data) {
-        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? '#c9d1d9' : '#212529';
-        const layout = { height: 200, margin: {t:30, b:20, l:20, r:10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 9, color: theme } };
+        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#333';
+        const layout = { height: 180, margin: {t:25, b:15, l:15, r:10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 8, color: theme } };
+        
         const cats = [...new Set(data.map(i => i.category || 'Other'))];
         const catQty = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + r.qty_on_hand, 0));
-        Plotly.newPlot('chart-cat', [{ x: cats, y: catQty, type: 'bar', marker: {color: '#2980b9'} }], { ...layout, title: 'Qty/Category' });
-        Plotly.newPlot('chart-pie', [{ values: catQty, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Category %' });
-        const smiths = [...new Set(data.map(i => i.goldsmith_id || 'N/A'))];
-        const sW = smiths.map(s => data.filter(i => i.goldsmith_id === s).reduce((sum, r) => sum + parseFloat(r.weight_gram), 0));
-        Plotly.newPlot('chart-smith', [{ values: sW, labels: smiths, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight/Smith' });
+        const catWeight = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + parseFloat(r.weight_gram), 0));
+        const smithWeights = [...new Set(data.map(i => i.goldsmith_id))].map(s => data.filter(i => i.goldsmith_id === s).reduce((sum, r) => sum + parseFloat(r.weight_gram), 0));
+
+        Plotly.newPlot('chart-cat', [{ x: cats, y: catQty, type: 'bar', marker: {color: '#6c5ce7'} }], { ...layout, title: 'Qty/Category' });
+        Plotly.newPlot('chart-pie', [{ values: catWeight, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight %' });
+        Plotly.newPlot('chart-smith', [{ values: smithWeights, labels: [...new Set(data.map(i => i.goldsmith_id))], type: 'pie', hole: 0.4 }], { ...layout, title: 'Smith %' });
     }
 
     document.getElementById('search-input').oninput = render;
-    document.getElementById('chart-toggle').onchange = (e) => {
-        document.getElementById('chart-section').classList.toggle('hidden', !e.target.checked);
-        if(e.target.checked) render();
-    };
+    document.getElementById('category-filter').onchange = render;
+    document.getElementById('chart-toggle').onchange = (e) => document.getElementById('chart-section').classList.toggle('hidden', !e.target.checked);
     document.getElementById('theme-switch').onchange = (e) => {
         document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
         render();
