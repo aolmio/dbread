@@ -22,12 +22,11 @@
         }
 
         body { background-color: var(--bg-body); color: var(--text-main); font-family: sans-serif; transition: 0.3s; padding-bottom: 30px; }
-        .metric-card { background: var(--bg-card); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border-color); height: 100%; text-align: center; }
-        .metric-value { font-size: 1.2rem; font-weight: 700; }
-        .metric-label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; }
+        .metric-card { background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color); height: 100%; text-align: center; }
+        .metric-value { font-size: 1.1rem; font-weight: 700; }
+        .metric-label { font-size: 0.7rem; opacity: 0.7; text-transform: uppercase; }
 
-        /* Highlight Boxes for Table Data */
-        .badge-weight { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; color: #fff !important; margin: 2px 0; }
+        .badge-weight { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; color: #fff !important; margin: 2px 0; min-width: 80px; text-align: center;}
         .bg-net { background-color: var(--accent-net); }
         .bg-smith { background-color: var(--accent-smith); }
         .bg-sale { background-color: var(--accent-sale); }
@@ -38,6 +37,8 @@
         #drop-area { border: 2px dashed #999; border-radius: 15px; padding: 30px; text-align: center; background: var(--bg-card); cursor: pointer; }
         .hidden { display: none !important; }
         tr { cursor: pointer; }
+        .cat-tag { font-size: 0.7rem; background: #eee; color: #333; padding: 2px 5px; border-radius: 4px; margin-top: 3px; display: inline-block; }
+        [data-theme="dark"] .cat-tag { background: #333; color: #ccc; }
     </style>
 </head>
 <body>
@@ -57,18 +58,29 @@
 
     <div id="app-content" class="hidden">
         <div class="search-container mb-3">
-            <input type="text" id="search-input" class="form-control mb-2" placeholder="Search item, code, or goldsmith...">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="chart-toggle">
-                <label class="form-check-label ms-1" for="chart-toggle">Show Analytics</label>
+            <div class="row g-2">
+                <div class="col-8">
+                    <input type="text" id="search-input" class="form-control" placeholder="Search item, code, smith or category...">
+                </div>
+                <div class="col-4">
+                    <select id="category-filter" class="form-select">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-2 d-flex justify-content-between align-items-center">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="chart-toggle">
+                    <label class="form-check-label ms-1" for="chart-toggle">Analytics</label>
+                </div>
+                <small id="row-count" class="text-muted"></small>
             </div>
         </div>
 
-        <div class="row g-2 mb-4">
-            <div class="col-4 col-md-2"><div class="metric-card"><div class="metric-label">Items</div><div class="metric-value" id="m-unique">-</div></div></div>
-            <div class="col-4 col-md-2"><div class="metric-card"><div class="metric-label">Stock</div><div class="metric-value" id="m-qty">-</div></div></div>
-            <div class="col-4 col-md-3"><div class="metric-card"><div class="metric-label">Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
-            <div class="col-12 col-md-5"><div class="metric-card"><div class="metric-label">Burmese Total</div><div class="metric-value" id="m-weight">-</div></div></div>
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-label">Items</div><div class="metric-value" id="m-unique">-</div></div></div>
+            <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-label">Grams</div><div class="metric-value" id="m-grams">-</div></div></div>
+            <div class="col-12 col-md-6"><div class="metric-card"><div class="metric-label">Burmese Total</div><div class="metric-value" id="m-weight">-</div></div></div>
         </div>
 
         <div id="chart-section" class="row g-3 mb-4 hidden">
@@ -127,6 +139,7 @@
 
     const config = { locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` };
     document.getElementById('drop-area').onclick = () => document.getElementById('db-upload').click();
+    
     document.getElementById('db-upload').onchange = async (e) => {
         const SQL = await initSqlJs(config);
         const reader = new FileReader();
@@ -142,28 +155,42 @@
     function loadDB() {
         const stmt = db.prepare("SELECT * FROM items");
         fullData = [];
+        let cats = new Set();
         while(stmt.step()) {
             let r = stmt.getAsObject();
-            fullData.push({ ...r, 
+            let row = { ...r, 
                 Net_Kyat: r['Net (ကျပ်) Net_kyat'] || 0, Net_Pe: r['Net (ပဲ) Net_pae'] || 0, Net_Yway: r['Net (ရွေး) Net_yway'] || 0 
-            });
+            };
+            fullData.push(row);
+            if(row.category) cats.add(row.category);
         }
-        render(fullData);
+        
+        const catSelect = document.getElementById('category-filter');
+        Array.from(cats).sort().forEach(c => {
+            catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+
+        render();
     }
 
     function toggleSort(key) {
         currentSort.asc = currentSort.key === key ? !currentSort.asc : false;
         currentSort.key = key;
-        render(fullData);
+        render();
     }
 
-    function render(data) {
+    function render() {
         const term = document.getElementById('search-input').value.toLowerCase();
-        let filtered = data.filter(i => 
-            String(i.item_code).toLowerCase().includes(term) || 
-            String(i.item_name).toLowerCase().includes(term) ||
-            String(i.goldsmith_id).toLowerCase().includes(term)
-        );
+        const catFilter = document.getElementById('category-filter').value;
+
+        let filtered = fullData.filter(i => {
+            const matchesText = String(i.item_code).toLowerCase().includes(term) || 
+                                String(i.item_name).toLowerCase().includes(term) ||
+                                String(i.goldsmith_id).toLowerCase().includes(term) ||
+                                String(i.category).toLowerCase().includes(term);
+            const matchesCat = catFilter === "" || i.category === catFilter;
+            return matchesText && matchesCat;
+        });
 
         filtered.sort((a, b) => {
             let vA = parseFloat(a[currentSort.key]) || 0;
@@ -172,13 +199,16 @@
         });
 
         document.getElementById('m-unique').innerText = filtered.length;
-        document.getElementById('m-qty').innerText = filtered.reduce((s, r) => s + (r.qty_on_hand || 0), 0);
         document.getElementById('m-grams').innerText = filtered.reduce((s, r) => s + (parseFloat(r.weight_gram) || 0), 0).toFixed(2) + "g";
         document.getElementById('m-weight').innerText = getBurmeseTotal(filtered);
+        document.getElementById('row-count').innerText = `${filtered.length} items shown`;
 
         document.getElementById('table-body').innerHTML = filtered.map(i => `
             <tr ondblclick="showDetail('${i.item_code}')">
-                <td><small>${i.item_code}</small><br><strong>${i.item_name}</strong></td>
+                <td>
+                    <small class="text-muted">${i.item_code}</small><br><strong>${i.item_name}</strong><br>
+                    <span class="cat-tag">${i.category || 'No Cat'}</span>
+                </td>
                 <td><strong>${i.weight_gram}</strong></td>
                 <td><span class="badge-weight bg-net">${formatBW(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</span></td>
                 <td><span class="badge-weight bg-smith">${formatBW(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</span></td>
@@ -192,41 +222,41 @@
         const i = fullData.find(x => x.item_code === code);
         document.getElementById('modal-content').innerHTML = `
             <div class="p-1">
-                <p><strong>Code/Name:</strong> ${i.item_code} - ${i.item_name}</p>
-                <p><strong>Goldsmith:</strong> ${i.goldsmith_id}</p>
-                <p><strong>Category:</strong> ${i.category} | <strong>Purity:</strong> ${i.purity}</p>
-                <p><strong>Location:</strong> ${i.location} | <strong>Status:</strong> ${i.status}</p>
+                <p><strong>Code:</strong> ${i.item_code} | <strong>Name:</strong> ${i.item_name}</p>
+                <p><strong>Goldsmith:</strong> ${i.goldsmith_id} | <strong>Category:</strong> ${i.category}</p>
+                <p><strong>Purity:</strong> ${i.purity} | <strong>Location:</strong> ${i.location}</p>
+                <p><strong>Status:</strong> ${i.status} | <strong>Grams:</strong> ${i.weight_gram}g</p>
                 <hr>
-                <p><strong>Notes:</strong> ${i.notes || 'No notes available'}</p>
+                <p><strong>Notes:</strong> ${i.notes || '-'}</p>
             </div>
         `;
         new bootstrap.Modal(document.getElementById('itemModal')).show();
     }
 
     function renderCharts(data) {
-        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#333';
-        const layout = { height: 220, margin: {t:30, b:20, l:20, r:10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 9, color: theme } };
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const layout = { height: 220, margin: {t:30, b:20, l:20, r:10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { size: 9, color: isDark ? '#fff' : '#333' } };
         
         const cats = [...new Set(data.map(i => i.category || 'Other'))];
-        const catQty = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + r.qty_on_hand, 0));
+        const catQty = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + (r.qty_on_hand || 0), 0));
         const catWeight = cats.map(c => data.filter(i => i.category === c).reduce((s, r) => s + parseFloat(r.weight_gram), 0));
-
         const smiths = [...new Set(data.map(i => i.goldsmith_id || 'Unknown'))];
         const smithWeights = smiths.map(s => data.filter(i => i.goldsmith_id === s).reduce((sum, r) => sum + parseFloat(r.weight_gram), 0));
 
-        Plotly.newPlot('chart-cat', [{ x: cats, y: catQty, type: 'bar', marker: {color: '#2980b9'} }], { ...layout, title: 'Qty/Category' });
-        Plotly.newPlot('chart-pie', [{ values: catWeight, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight/Category' });
-        Plotly.newPlot('chart-smith', [{ values: smithWeights, labels: smiths, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight/Goldsmith' });
+        Plotly.newPlot('chart-cat', [{ x: cats, y: catQty, type: 'bar', marker: {color: '#2980b9'} }], { ...layout, title: 'Qty / Category' });
+        Plotly.newPlot('chart-pie', [{ values: catWeight, labels: cats, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight / Category' });
+        Plotly.newPlot('chart-smith', [{ values: smithWeights, labels: smiths, type: 'pie', hole: 0.4 }], { ...layout, title: 'Weight / Goldsmith' });
     }
 
-    document.getElementById('search-input').oninput = () => render(fullData);
+    document.getElementById('search-input').oninput = render;
+    document.getElementById('category-filter').onchange = render;
     document.getElementById('chart-toggle').onchange = (e) => {
         document.getElementById('chart-section').classList.toggle('hidden', !e.target.checked);
         if(e.target.checked) renderCharts(fullData);
     };
     document.getElementById('theme-switch').onchange = (e) => {
         document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
-        render(fullData);
+        render();
     };
 </script>
 </body>
