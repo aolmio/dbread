@@ -13,7 +13,7 @@
   <style>
     :root{
       --bg:#f6f8fb; --card:#fff; --text:#111827; --muted:#6b7280; --border:#e5e7eb;
-      --primary:#2563eb; --success:#16a34a; --warn:#d97706; --violet:#7c3aed;
+      --primary:#2563eb; --net:#2563eb; --smith:#d97706; --profit:#16a34a;
       --shadow:0 8px 30px rgba(0,0,0,.06);
     }
     [data-theme='dark']{
@@ -23,17 +23,24 @@
     body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;transition:.2s}
     .cardx{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
     .metric{padding:1rem;text-align:center;height:100%}
-    .metric .v{font-weight:800;font-size:clamp(1.1rem,2vw,1.8rem);color:var(--primary)}
+    .metric .v{font-weight:800;font-size:clamp(1.05rem,2vw,1.8rem);color:var(--primary);line-height:1.2}
     .metric .l{font-size:.75rem;color:var(--muted);text-transform:uppercase}
     .sticky-topbar{position:sticky;top:0;z-index:1000;background:var(--bg);backdrop-filter:blur(8px)}
     .tag{padding:.45rem .9rem;border-radius:999px;border:1px solid var(--primary);cursor:pointer;white-space:nowrap}
     .tag.active{background:var(--primary);color:#fff}
-    .tags{display:flex;gap:.5rem;overflow:auto;padding:.5rem 0;scrollbar-width:none}
-    .tags::-webkit-scrollbar{display:none}
+    .tags{display:flex;gap:.5rem;overflow:auto;padding:.5rem 0;scrollbar-width:none}.tags::-webkit-scrollbar{display:none}
     .drop{border:2px dashed var(--border);padding:3rem;border-radius:18px;text-align:center;cursor:pointer;background:var(--card)}
-    .badge-pill{min-width:72px;font-size:.85rem;padding:.45rem .65rem}.net-badge{background:#2563eb!important}.smith-badge{background:#d97706!important}.profit-badge{background:#16a34a!important}@media(max-width:768px){.table{font-size:.84rem}.metric{padding:.75rem}.badge-pill{min-width:60px;font-size:.75rem}}
+    .badge-pill{min-width:95px;font-size:.82rem;padding:.5rem .7rem;white-space:normal;line-height:1.2}
+    .net-badge{background:var(--net)!important}.smith-badge{background:var(--smith)!important}.profit-badge{background:var(--profit)!important}
     .table td,.table th{vertical-align:middle}
+    .sortable{cursor:pointer;user-select:none}
     .hidden{display:none!important}
+    @media(max-width:768px){
+      .table{font-size:.80rem}
+      .metric{padding:.75rem}
+      .badge-pill{min-width:72px;font-size:.72rem;padding:.35rem .45rem}
+      h4{font-size:1.15rem}
+    }
   </style>
 </head>
 <body>
@@ -68,7 +75,16 @@
     <div class="cardx p-2 mt-3">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
-          <thead><tr><th onclick="sortBy('item_name')" style="cursor:pointer">Item ⇅</th><th onclick="sortBy('qty_on_hand')" style="cursor:pointer">Qty ⇅</th><th id="sortGram" style="cursor:pointer">Gram ⇅</th><th onclick="sortBy('Net_Kyat')" style="cursor:pointer">Net ⇅</th><th onclick="sortBy('smith_wage_kyat')" style="cursor:pointer">Smith ⇅</th><th onclick="sortBy('sale_wage_profit_kyat')" style="cursor:pointer">Profit ⇅</th></tr></thead>
+          <thead>
+            <tr>
+              <th class="sortable" onclick="sortBy('item_name')">Item ⇅</th>
+              <th class="sortable" onclick="sortBy('qty_on_hand')">Qty ⇅</th>
+              <th class="sortable" onclick="sortBy('weight_gram')">Gram ⇅</th>
+              <th class="sortable" onclick="sortBy('Net_Kyat')">Net ⇅</th>
+              <th class="sortable" onclick="sortBy('smith_wage_kyat')">Smith ⇅</th>
+              <th class="sortable" onclick="sortBy('sale_wage_profit_kyat')">Profit ⇅</th>
+            </tr>
+          </thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -84,31 +100,50 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const debounce=(fn,d=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),d)}};
 
-function bw(k,p,y){const out=[]; if(k>0) out.push(`${Math.floor(k)} ကျပ်`); if(p>0) out.push(`${Math.floor(p)} ပဲ`); if(y>0) out.push(`${(+y).toFixed(1)} ရွေး`); return out.join(' ')||'0'; }k`); if(p>0) out.push(`${Math.floor(p)}p`); if(y>0) out.push(`${(+y).toFixed(1)}y`); return out.join(' ')||'0';}
-function totalBW(rows){ let k=0,p=0,y=0; rows.forEach(r=>{k+=+r.Net_Kyat||0;p+=+r.Net_Pe||0;y+=+r.Net_Yway||0}); p+=Math.floor(y/8); y%=8; k+=Math.floor(p/16); p%=16; return `${k}K ${p}P ${y.toFixed(1)}Y`; }
+function bw(k,p,y){
+  const out=[];
+  if(+k>0) out.push(`${Math.floor(k)} ကျပ်`);
+  if(+p>0) out.push(`${Math.floor(p)} ပဲ`);
+  if(+y>0) out.push(`${(+y).toFixed(1)} ရွေး`);
+  return out.join(' ') || '0';
+}
+
+function totalBW(rows){
+  let k=0,p=0,y=0;
+  rows.forEach(r=>{k+=+r.Net_Kyat||0; p+=+r.Net_Pe||0; y+=+r.Net_Yway||0;});
+  p+=Math.floor(y/8); y%=8;
+  k+=Math.floor(p/16); p%=16;
+  return `${k} ကျပ် ${p} ပဲ ${y.toFixed(1)} ရွေး`;
+}
 
 async function loadDB(file){
   const SQL=await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`});
-  const bytes=new Uint8Array(await file.arrayBuffer());
-  db=new SQL.Database(bytes);
-  const stmt=db.prepare('SELECT * FROM items'); data=[]; const cats=new Set(['All']);
+  db=new SQL.Database(new Uint8Array(await file.arrayBuffer()));
+  const stmt=db.prepare('SELECT * FROM items');
+  data=[]; const cats=new Set(['All']);
   while(stmt.step()){
     const r=stmt.getAsObject();
-    r.Net_Kyat=r['Net (ကျပ်) Net_kyat']||0; r.Net_Pe=r['Net (ပဲ) Net_pae']||0; r.Net_Yway=r['Net (ရွေး) Net_yway']||0;
-    data.push(r); if(r.category) cats.add(r.category);
+    r.Net_Kyat=r['Net (ကျပ်) Net_kyat']||0;
+    r.Net_Pe=r['Net (ပဲ) Net_pae']||0;
+    r.Net_Yway=r['Net (ရွေး) Net_yway']||0;
+    data.push(r);
+    if(r.category) cats.add(r.category);
   }
   $('tags').innerHTML=[...cats].map(c=>`<span class='tag ${c==='All'?'active':''}' onclick='setCat(${JSON.stringify(c)},this)'>${esc(c)}</span>`).join('');
   $('drop').classList.add('hidden'); $('app').classList.remove('hidden'); render();
 }
 
 function setCat(c,el){selected=c; document.querySelectorAll('.tag').forEach(x=>x.classList.remove('active')); el.classList.add('active'); render();}
-function sortBy(k){sort.asc=sort.key===k?!sort.asc:false; sort.key=k; render();}
-$('sortGram').onclick=()=>sortBy('weight_gram');
+function sortBy(k){sort.asc=(sort.key===k)?!sort.asc:false; sort.key=k; render();}
 
 function filtered(){
   const t=$('search').value.toLowerCase();
   return data.filter(i=>(selected==='All'||i.category===selected)&&(`${i.item_code} ${i.item_name} ${i.goldsmith_id}`.toLowerCase().includes(t)))
-    .sort((a,b)=> sort.asc ? (+a[sort.key]-+b[sort.key]) : (+b[sort.key]-+a[sort.key]));
+    .sort((a,b)=>{
+      const va=a[sort.key], vb=b[sort.key];
+      if(!isNaN(va) && !isNaN(vb)) return sort.asc ? (+va - +vb) : (+vb - +va);
+      return sort.asc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+    });
 }
 
 function render(){
@@ -122,20 +157,20 @@ function render(){
 }
 
 function detail(code){
- const i=data.find(x=>x.item_code===code); if(!i) return;
- $('modalBody').innerHTML=`<h5>${esc(i.item_name)}</h5><hr><p><b>Code:</b> ${esc(i.item_code)}</p><p><b>Purity:</b> ${esc(i.purity)}</p><p><b>Smith:</b> ${esc(i.goldsmith_id)}</p><p><b>Location:</b> ${esc(i.location)}</p><p><b>Status:</b> ${esc(i.status)}</p><div class='alert alert-light'>${esc(i.notes||'No notes')}</div>`;
- new bootstrap.Modal($('detailModal')).show();
+  const i=data.find(x=>x.item_code===code); if(!i) return;
+  $('modalBody').innerHTML=`<h5>${esc(i.item_name)}</h5><hr><p><b>Code:</b> ${esc(i.item_code)}</p><p><b>Purity:</b> ${esc(i.purity)}</p><p><b>Smith:</b> ${esc(i.goldsmith_id)}</p><p><b>Location:</b> ${esc(i.location)}</p><p><b>Status:</b> ${esc(i.status)}</p><div class='alert alert-light'>${esc(i.notes||'No notes')}</div>`;
+  new bootstrap.Modal($('detailModal')).show();
 }
 
 function drawCharts(rows){
- const cats=[...new Set(rows.map(x=>x.category||'Other'))];
- const qty=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
- const smith=[...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
- const grams=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.weight_gram||0),0));
- const L={height:260,margin:{t:40,l:20,r:20,b:30},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)'};
- Plotly.react('c1',[{x:cats,y:qty,type:'bar'}],{...L,title:'Qty by Category'});
- Plotly.react('c2',[{labels:cats,values:qty,type:'pie',hole:.45}],{...L,title:'Stock Distribution'});
- Plotly.react('c3',[{labels:smith,values:grams,type:'pie',hole:.45}],{...L,title:'Gram by Smith'});
+  const cats=[...new Set(rows.map(x=>x.category||'Other'))];
+  const qty=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
+  const smith=[...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
+  const grams=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.weight_gram||0),0));
+  const L={height:260,margin:{t:40,l:20,r:20,b:30},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)'};
+  Plotly.react('c1',[{x:cats,y:qty,type:'bar'}],{...L,title:'Qty by Category'});
+  Plotly.react('c2',[{labels:cats,values:qty,type:'pie',hole:.45}],{...L,title:'Stock Distribution'});
+  Plotly.react('c3',[{labels:smith,values:grams,type:'pie',hole:.45}],{...L,title:'Gram by Smith'});
 }
 
 $('drop').onclick=()=>$('file').click();
