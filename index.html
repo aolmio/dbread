@@ -2,196 +2,61 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Gold Inventory Pro — Enterprise Edition</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
   <style>
-    :root{
-      --bg:#f6f8fb; --card:#fff; --text:#111827; --muted:#6b7280; --border:#e5e7eb;
-      --primary:#2563eb; --net:#2563eb; --smith:#d97706; --profit:#16a34a;
-      --shadow:0 8px 30px rgba(0,0,0,.06);
-    }
-    [data-theme='dark']{
-      --bg:#111827; --card:#1f2937; --text:#f3f4f6; --muted:#9ca3af; --border:#374151;
-      --shadow:0 8px 30px rgba(0,0,0,.25);
-    }
-    body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;transition:.2s}
-    .cardx{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
-    .modal-content{background:var(--card)!important;color:var(--text)!important;border:1px solid var(--border)!important}
-    .alert-light{background:var(--bg)!important;color:var(--text)!important;border-color:var(--border)!important}
-    .metric{padding:1rem;text-align:center;height:100%}
-    .metric .v{font-weight:800;font-size:clamp(1.05rem,2vw,1.8rem);color:var(--primary);line-height:1.2}
-    .metric .l{font-size:.75rem;color:var(--muted);text-transform:uppercase}
-    .sticky-topbar{position:sticky;top:0;z-index:1000;background:var(--bg);backdrop-filter:blur(8px)}
-    .tag{padding:.45rem .9rem;border-radius:999px;border:1px solid var(--primary);cursor:pointer;white-space:nowrap}
-    .tag.active{background:var(--primary);color:#fff}
-    .tags{display:flex;gap:.5rem;overflow:auto;padding:.5rem 0;scrollbar-width:none}.tags::-webkit-scrollbar{display:none}
-    .drop{border:2px dashed var(--border);padding:3rem;border-radius:18px;text-align:center;cursor:pointer;background:var(--card)}
-    .badge-pill{min-width:95px;font-size:.82rem;padding:.5rem .7rem;white-space:normal;line-height:1.2}
+    :root{--bg:#f6f8fb;--card:#fff;--text:#111827;--muted:#6b7280;--border:#e5e7eb;--primary:#2563eb;--net:#2563eb;--smith:#d97706;--profit:#16a34a;--shadow:0 8px 30px rgba(0,0,0,.08)}
+    [data-theme='dark']{--bg:#0f172a;--card:#1e293b;--text:#f8fafc;--muted:#cbd5e1;--border:#334155;--shadow:0 8px 30px rgba(0,0,0,.35)}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;transition:.25s}
+    .cardx,.modal-content,.table,.table td,.table th,.form-control,.drop{background:var(--card)!important;color:var(--text)!important;border-color:var(--border)!important}
+    .modal-content,.cardx{border-radius:18px;box-shadow:var(--shadow)}
+    .sticky-topbar{position:sticky;top:0;z-index:1000;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);padding-top:.5rem}
+    .metric{padding:1.2rem;text-align:center;height:100%}
+    .metric .v{font-weight:900;font-size:clamp(1.4rem,4vw,2.4rem);line-height:1.1;color:var(--primary)}
+    .metric .l{font-size:.95rem;font-weight:700;color:var(--muted);text-transform:uppercase}
+    .drop{border:2px dashed var(--border);border-radius:20px;padding:3rem 1rem;text-align:center;cursor:pointer}
+    .tags{display:flex;gap:.5rem;overflow:auto;padding:.4rem 0;scrollbar-width:none}.tags::-webkit-scrollbar{display:none}
+    .tag{padding:.55rem 1rem;border:1px solid var(--primary);border-radius:999px;white-space:nowrap;cursor:pointer;font-size:1rem}.tag.active{background:var(--primary);color:#fff}
+    .badge-pill{min-width:100px;font-size:1rem;padding:.6rem .8rem}
     .net-badge{background:var(--net)!important}.smith-badge{background:var(--smith)!important}.profit-badge{background:var(--profit)!important}
-    .table td,.table th{vertical-align:middle}
-    .sortable{cursor:pointer;user-select:none}
-    .hidden{display:none!important}
-    @media(max-width:768px){
-      .table{font-size:.80rem}
-      .metric{padding:.75rem}
-      .badge-pill{min-width:72px;font-size:.72rem;padding:.35rem .45rem}
-      h4{font-size:1.15rem}
-    }
+    .copy-code{cursor:pointer;color:var(--primary);font-weight:700;font-size:1rem}.hidden{display:none!important}
+    .table{font-size:1.05rem}.table th{font-size:1.05rem;font-weight:800}.table td{vertical-align:middle}
+    .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:1rem}
+    .detail-box{border:1px solid var(--border);border-radius:14px;padding:.9rem;background:var(--bg)}
+    @media(max-width:768px){.table{font-size:.92rem}.metric .v{font-size:1.55rem}.badge-pill{font-size:.9rem;min-width:80px}}
   </style>
 </head>
 <body>
-<div class="container-fluid py-3" style="max-width:1500px">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="fw-bold m-0">💎 Gold Inventory Pro</h4>
-    <div class="form-check form-switch"><input id="theme" class="form-check-input" type="checkbox"></div>
-  </div>
-
-  <div id="drop" class="drop mb-3">📁 Click or drop <b>gold_stock.db</b><input id="file" type="file" accept=".db" hidden></div>
-
-  <section id="app" class="hidden">
-    <div class="sticky-topbar pb-2">
-      <input id="search" class="form-control mb-2" placeholder="Search code, name, smith...">
-      <div id="tags" class="tags"></div>
-      <div class="form-check form-switch"><input id="chartsToggle" class="form-check-input" type="checkbox"><label class="form-check-label">Show Analytics</label></div>
-    </div>
-
-    <div class="row g-2 my-2">
-      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Unique</div><div id="u" class="v">-</div></div></div>
-      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Stock Qty</div><div id="q" class="v">-</div></div></div>
-      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Total Grams</div><div id="g" class="v">-</div></div></div>
-      <div class="col-6 col-md-3"><div class="cardx metric"><div class="l">Burmese Weight</div><div id="bw" class="v">-</div></div></div>
-    </div>
-
-    <div id="charts" class="row g-3 my-2 hidden">
-      <div class="col-md-4"><div class="cardx p-2"><div id="c1"></div></div></div>
-      <div class="col-md-4"><div class="cardx p-2"><div id="c2"></div></div></div>
-      <div class="col-md-4"><div class="cardx p-2"><div id="c3"></div></div></div>
-    </div>
-
-    <div class="cardx p-2 mt-3">
-      <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead>
-            <tr>
-              <th class="sortable" onclick="sortBy('item_name')">Item ⇅</th>
-              <th class="sortable" onclick="sortBy('qty_on_hand')">Qty ⇅</th>
-              <th class="sortable" onclick="sortBy('weight_gram')">Gram ⇅</th>
-              <th class="sortable" onclick="sortBy('Net_Kyat')">Net ⇅</th>
-              <th class="sortable" onclick="sortBy('smith_wage_kyat')">Smith ⇅</th>
-              <th class="sortable" onclick="sortBy('sale_wage_profit_kyat')">Profit ⇅</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-</div>
-
-<div class="modal fade" id="detailModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4" id="modalBody"></div></div></div>
-
+<div class='container-fluid py-3' style='max-width:1500px'>
+<div class='d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap'><h4 class='fw-bold m-0'>💎 Gold Inventory Pro</h4><div class='form-check form-switch'><input id='theme' class='form-check-input' type='checkbox'><label class='form-check-label'>Dark</label></div></div>
+<div id='drop' class='drop mb-3'>📁 Click or drop <b>gold_stock.db</b><input id='file' type='file' accept='.db' hidden></div>
+<section id='app' class='hidden'>
+<div class='sticky-topbar pb-2'><input id='search' class='form-control form-control-lg mb-2' placeholder='Search code, name, smith...'><div id='tags' class='tags'></div><div class='form-check form-switch'><input id='chartsToggle' class='form-check-input' type='checkbox'><label class='form-check-label'>Show Analytics</label></div></div>
+<div class='row g-2 my-2'><div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Unique</div><div id='u' class='v'>-</div></div></div><div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Stock Qty</div><div id='q' class='v'>-</div></div></div><div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Total Grams</div><div id='g' class='v'>-</div></div></div><div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Burmese Weight</div><div id='bw' class='v'>-</div></div></div></div>
+<div id='charts' class='row g-3 my-2 hidden'><div class='col-lg-4'><div class='cardx p-2'><div id='c1'></div></div></div><div class='col-lg-4'><div class='cardx p-2'><div id='c2'></div></div></div><div class='col-lg-4'><div class='cardx p-2'><div id='c3'></div></div></div></div>
+<div class='cardx p-2 mt-3'><div class='table-responsive'><table class='table table-hover mb-0'><thead><tr><th onclick="sortBy('item_name')">Item ⇅</th><th onclick="sortBy('qty_on_hand')">Qty ⇅</th><th onclick="sortBy('weight_gram')">Total Gram ⇅</th><th>Net</th><th>Smith</th><th>Profit</th></tr></thead><tbody id='tbody'></tbody></table></div></div>
+</section></div>
+<div class='modal fade' id='detailModal'><div class='modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable'><div class='modal-content p-4' id='modalBody'></div></div></div>
 <script>
 let db=null,data=[],selected=new Set(['All']),sort={key:'weight_gram',asc:false};
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const debounce=(fn,d=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),d)}};
-
-function bw(k,p,y){
-  const out=[];
-  if(+k>0) out.push(`${Math.floor(k)} ကျပ်`);
-  if(+p>0) out.push(`${Math.floor(p)} ပဲ`);
-  if(+y>0) out.push(`${(+y).toFixed(1)} ရွေး`);
-  return out.join(' ') || '0';
-}
-
-function totalBW(rows){
-  let k=0,p=0,y=0;
-  rows.forEach(r=>{k+=+r.Net_Kyat||0; p+=+r.Net_Pe||0; y+=+r.Net_Yway||0;});
-  p+=Math.floor(y/8); y%=8;
-  k+=Math.floor(p/16); p%=16;
-  return `${k} ကျပ် ${p} ပဲ ${y.toFixed(1)} ရွေး`;
-}
-
-async function loadDB(file){
-  const SQL=await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`});
-  db=new SQL.Database(new Uint8Array(await file.arrayBuffer()));
-  const stmt=db.prepare('SELECT * FROM items');
-  data=[]; const cats=new Set(['All']);
-  while(stmt.step()){
-    const r=stmt.getAsObject();
-    r.Net_Kyat=r['Net (ကျပ်) Net_kyat']||0;
-    r.Net_Pe=r['Net (ပဲ) Net_pae']||0;
-    r.Net_Yway=r['Net (ရွေး) Net_yway']||0;
-    data.push(r);
-    if(r.category) cats.add(r.category);
-  }
-  $('tags').innerHTML=[...cats].map(c=>`<span class='tag ${c==='All'?'active':''}' onclick='setCat(${JSON.stringify(c)},this)'>${esc(c)}</span>`).join('');
-  $('drop').classList.add('hidden'); $('app').classList.remove('hidden'); render();
-}
-
-function setCat(c,el){
-  if(c==='All'){ selected=new Set(['All']); document.querySelectorAll('.tag').forEach(x=>x.classList.remove('active')); el.classList.add('active'); }
-  else {
-    selected.delete('All');
-    if(selected.has(c)){ selected.delete(c); el.classList.remove('active'); }
-    else { selected.add(c); el.classList.add('active'); }
-    if(selected.size===0){ selected=new Set(['All']); document.querySelectorAll('.tag')[0].classList.add('active'); }
-    document.querySelectorAll('.tag').forEach(x=>{ if(x.textContent==='All' && !selected.has('All')) x.classList.remove('active'); });
-  }
-  render();
-}
-function sortBy(k){sort.asc=(sort.key===k)?!sort.asc:false; sort.key=k; render();}
-
-function filtered(){
-  const t=$('search').value.toLowerCase();
-  return data.filter(i=>(selected.has('All')||selected.has(i.category))&&(`${i.item_code} ${i.item_name} ${i.goldsmith_id}`.toLowerCase().includes(t)))
-    .sort((a,b)=>{
-      const va=a[sort.key], vb=b[sort.key];
-      if(!isNaN(va) && !isNaN(vb)) return sort.asc ? (+va - +vb) : (+vb - +va);
-      return sort.asc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
-    });
-}
-
-function render(){
-  const rows=filtered();
-  $('u').textContent=rows.length;
-  $('q').textContent=rows.reduce((s,r)=>s+(+r.qty_on_hand||0),0);
-  $('g').textContent=rows.reduce((s,r)=>s+(+r.weight_gram||0),0).toFixed(2);
-  $('bw').textContent=totalBW(rows);
-  $('tbody').innerHTML=rows.map(i=>`<tr ondblclick='detail(${JSON.stringify(i.item_code)})'><td><b>${esc(i.item_name)}</b><br><small>${esc(i.item_code)}</small></td><td><span class='badge text-bg-secondary badge-pill'>${i.qty_on_hand}</span></td><td>${(+i.weight_gram).toFixed(2)}g</td><td><span class='badge badge-pill net-badge'>${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</span></td><td><span class='badge badge-pill smith-badge'>${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</span></td><td><span class='badge badge-pill profit-badge'>${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</span></td></tr>`).join('');
-  if(!$('charts').classList.contains('hidden')) drawCharts(rows);
-}
-
-function detail(code){
-  const i=data.find(x=>x.item_code===code); if(!i) return;
-  $('modalBody').innerHTML=`<h5>${esc(i.item_name)}</h5><hr><p><b>Code:</b> ${esc(i.item_code)}</p><p><b>Purity:</b> ${esc(i.purity)}</p><p><b>Smith:</b> ${esc(i.goldsmith_id)}</p><p><b>Location:</b> ${esc(i.location)}</p><p><b>Status:</b> ${esc(i.status)}</p><div class='alert alert-light'>${esc(i.notes||'No notes')}</div>`;
-  new bootstrap.Modal($('detailModal')).show();
-}
-
-function drawCharts(rows){
-  const cats=[...new Set(rows.map(x=>x.category||'Other'))];
-  const qty=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
-  const catWeights=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.weight_gram||0),0));
-  const smith=[...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
-  const smithQty=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
-  const L={height:280,margin:{t:40,l:20,r:20,b:30},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{size:12}};
-  Plotly.react('c1',[{x:cats,y:qty,type:'bar'}],{...L,title:'Qty by Category'});
-  Plotly.react('c2',[{labels:cats,values:catWeights,type:'pie',hole:.45,textinfo:'label+percent'}],{...L,title:'Weight by Category'});
-  Plotly.react('c3',[{labels:smith,values:smithQty,type:'pie',hole:.45,textinfo:'label+percent'}],{...L,title:'Qty by Smith'});
-}
-
-$('drop').onclick=()=>$('file').click();
-$('file').onchange=e=>e.target.files[0]&&loadDB(e.target.files[0]);
-$('search').oninput=debounce(render);
-$('chartsToggle').onchange=e=>{$('charts').classList.toggle('hidden',!e.target.checked); render();};
-$('theme').onchange=e=>{document.documentElement.dataset.theme=e.target.checked?'dark':'light'; localStorage.theme=document.documentElement.dataset.theme; render();};
-if(localStorage.theme==='dark'){ $('theme').checked=true; document.documentElement.dataset.theme='dark'; }
-</script>
-</body>
-</html>
+const activeQty=r=>(+r.qty_on_hand||0)>0, totalGrams=r=>(+r.weight_gram||0)*(+r.qty_on_hand||0);
+function gramsToBW(g){let y=g*8,k=Math.floor(y/128);y%=128;let p=Math.floor(y/8);y%=8;return `${k?`${k} ကျပ် `:''}${p?`${p} ပဲ `:''}${y.toFixed(1)} ရွေး`.trim()}
+function bw(k,p,y){const o=[];if(+k)o.push(`${Math.floor(k)} ကျပ်`);if(+p)o.push(`${Math.floor(p)} ပဲ`);if(+y)o.push(`${(+y).toFixed(1)} ရွေး`);return o.join(' ')||'0'}
+async function loadDB(file){const SQL=await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`});db=new SQL.Database(new Uint8Array(await file.arrayBuffer()));const stmt=db.prepare('SELECT * FROM items');data=[];const cats=new Set(['All']);while(stmt.step()){const r=stmt.getAsObject();r.Net_Kyat=r['Net (ကျပ်) Net_kyat']||0;r.Net_Pe=r['Net (ပဲ) Net_pae']||0;r.Net_Yway=r['Net (ရွေး) Net_yway']||0;data.push(r);if(r.category)cats.add(r.category)}$('tags').innerHTML=[...cats].map(c=>`<span class='tag ${c==='All'?'active':''}' onclick='setCat(${JSON.stringify(c)},this)'>${esc(c)}</span>`).join('');$('drop').classList.add('hidden');$('app').classList.remove('hidden');render()}
+function setCat(c,el){if(c==='All'){selected=new Set(['All']);document.querySelectorAll('.tag').forEach(x=>x.classList.remove('active'));el.classList.add('active')}else{selected.delete('All');selected.has(c)?(selected.delete(c),el.classList.remove('active')):(selected.add(c),el.classList.add('active'));if(!selected.size){selected=new Set(['All']);document.querySelectorAll('.tag')[0].classList.add('active')}}render()}
+function sortBy(k){sort.asc=(sort.key===k)?!sort.asc:false;sort.key=k;render()}
+function filtered(){const t=$('search').value.toLowerCase();return data.filter(i=>(selected.has('All')||selected.has(i.category))&&(`${i.item_code} ${i.item_name} ${i.goldsmith_id}`.toLowerCase().includes(t))).sort((a,b)=>{const va=(sort.key==='weight_gram'?totalGrams(a):a[sort.key]),vb=(sort.key==='weight_gram'?totalGrams(b):b[sort.key]);return !isNaN(va)&&!isNaN(vb)?(sort.asc?+va-+vb:+vb-+va):(sort.asc?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va)))})}
+function copyCode(c){navigator.clipboard.writeText(c)}
+function render(){const rows=filtered(),activeRows=rows.filter(activeQty);$('u').textContent=rows.length;$('q').textContent=activeRows.reduce((s,r)=>s+(+r.qty_on_hand||0),0);$('g').textContent=activeRows.reduce((s,r)=>s+totalGrams(r),0).toFixed(2);$('bw').textContent=gramsToBW(activeRows.reduce((s,r)=>s+totalGrams(r),0));$('tbody').innerHTML=rows.map(i=>`<tr ondblclick='detail(${JSON.stringify(i.item_code)})'><td><b>${esc(i.item_name)}</b><br><small class='copy-code' onclick='event.stopPropagation();copyCode(${JSON.stringify(i.item_code)})'>${esc(i.item_code)} 📋</small></td><td><span class='badge text-bg-secondary badge-pill'>${i.qty_on_hand||0}</span></td><td>${activeQty(i)?totalGrams(i).toFixed(2):'0.00'}g<br><small>${activeQty(i)?gramsToBW(totalGrams(i)):'0'}</small></td><td><span class='badge badge-pill net-badge'>${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</span></td><td><span class='badge badge-pill smith-badge'>${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</span></td><td><span class='badge badge-pill profit-badge'>${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</span></td></tr>`).join('');if(!$('charts').classList.contains('hidden'))drawCharts(activeRows)}
+function detail(code){const i=data.find(x=>x.item_code===code);if(!i)return;const rows=Object.entries(i).map(([k,v])=>`<div class='detail-box'><small style='color:var(--muted)'>${esc(k)}</small><br><b style='font-size:1.1rem'>${esc(v)}</b></div>`).join('');$('modalBody').innerHTML=`<h4>${esc(i.item_name)}</h4><p><b>Code:</b> <span class='copy-code' onclick='copyCode(${JSON.stringify(i.item_code)})'>${esc(i.item_code)} 📋</span></p><p><b>Total Weight:</b> ${totalGrams(i).toFixed(2)}g (${gramsToBW(totalGrams(i))})</p><div class='detail-grid'>${rows}</div>`;new bootstrap.Modal($('detailModal')).show()}
+function drawCharts(rows){const cats=[...new Set(rows.map(x=>x.category||'Other'))],qty=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0)),weights=cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+totalGrams(b),0)),smith=[...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))],smithQty=smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.qty_on_hand||0),0)); const L={height:420,margin:{t:70,l:50,r:50,b:70},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{size:18,color:getComputedStyle(document.documentElement).getPropertyValue('--text')}}; Plotly.react('c1',[{x:cats,y:qty,type:'bar',text:qty,textposition:'outside'}],{...L,title:{text:'Qty by Category',font:{size:24}}}); Plotly.react('c2',[{labels:cats,values:weights,type:'pie',hole:.45,textinfo:'label+value+percent',textfont:{size:16}}],{...L,title:{text:'Weight by Category',font:{size:24}}}); Plotly.react('c3',[{labels:smith,values:smithQty,type:'pie',hole:.45,textinfo:'label+value+percent',textfont:{size:16}}],{...L,title:{text:'Qty by Smith',font:{size:24}}})}
+$('drop').onclick=()=>$('file').click();$('file').onchange=e=>e.target.files[0]&&loadDB(e.target.files[0]);$('search').oninput=debounce(render);$('chartsToggle').onchange=e=>{$('charts').classList.toggle('hidden',!e.target.checked);render()};$('theme').onchange=e=>{document.documentElement.dataset.theme=e.target.checked?'dark':'light';localStorage.theme=document.documentElement.dataset.theme;render()};if(localStorage.theme==='dark'){$('theme').checked=true;document.documentElement.dataset.theme='dark'}
+</script></body></html>
