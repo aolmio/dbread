@@ -85,6 +85,15 @@
 
     /* Horizontal scroll wrapper for desktop table on mobile (fallback) */
     .table-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+    /* ── Chart legends ── */
+    .chart-wrap{display:flex;flex-direction:column}
+    .chart-legend{padding:.5rem .8rem 1rem;display:flex;flex-direction:column;gap:5px}
+    .legend-row{display:flex;align-items:center;gap:8px;font-size:.82rem;line-height:1.2}
+    .legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+    .legend-label{flex:1;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .legend-val{font-weight:700;color:var(--muted);white-space:nowrap}
+    .legend-pct{font-size:.78rem;color:var(--muted);white-space:nowrap}
   </style>
 </head>
 <body>
@@ -123,9 +132,9 @@
 
     <!-- Charts -->
     <div id='charts' class='row g-3 my-2 hidden'>
-      <div class='col-lg-4'><div class='cardx p-2'><div id='c1'></div></div></div>
-      <div class='col-lg-4'><div class='cardx p-2'><div id='c2'></div></div></div>
-      <div class='col-lg-4'><div class='cardx p-2'><div id='c3'></div></div></div>
+      <div class='col-lg-4'><div class='cardx p-2 chart-wrap'><div id='c1'></div><div id='l1' class='chart-legend'></div></div></div>
+      <div class='col-lg-4'><div class='cardx p-2 chart-wrap'><div id='c2'></div><div id='l2' class='chart-legend'></div></div></div>
+      <div class='col-lg-4'><div class='cardx p-2 chart-wrap'><div id='c3'></div><div id='l3' class='chart-legend'></div></div></div>
     </div>
 
     <!-- Desktop Table -->
@@ -392,20 +401,96 @@ function detail(code) {
 }
 
 // ─── Charts ──────────────────────────────────────────────────────────────────
+// Plotly color palette (consistent across charts)
+const PALETTE = [
+  '#2563eb','#d97706','#16a34a','#dc2626','#7c3aed','#0891b2',
+  '#ea580c','#65a30d','#db2777','#0d9488','#92400e','#1d4ed8'
+];
+
+function makeLegend(elId, labels, values, unit='') {
+  const total = values.reduce((a,b)=>a+b,0);
+  $( elId).innerHTML = labels.map((lbl,i)=>{
+    const pct = total>0 ? (values[i]/total*100).toFixed(1) : '0.0';
+    const val = Number.isInteger(values[i]) ? values[i] : values[i].toFixed(2);
+    return `<div class='legend-row'>
+      <div class='legend-dot' style='background:${PALETTE[i%PALETTE.length]}'></div>
+      <span class='legend-label' title='${lbl}'>${lbl}</span>
+      <span class='legend-val'>${val}${unit}</span>
+      <span class='legend-pct'>${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
 function drawCharts(rows) {
-  const cats     = [...new Set(rows.map(x => x.category || 'Other'))];
-  const qty      = cats.map(c => rows.filter(x => x.category === c).reduce((a, b) => a + (+b.qty_on_hand || 0), 0));
-  const weights  = cats.map(c => rows.filter(x => x.category === c).reduce((a, b) => a + totalNetGrams(b), 0));
-  const smith    = [...new Set(rows.map(x => x.goldsmith_id || 'Unknown'))];
-  const smithQty = smith.map(s => rows.filter(x => x.goldsmith_id === s).reduce((a, b) => a + (+b.qty_on_hand || 0), 0));
-  const L = {
-    height: 420, margin: {t:70,l:50,r:50,b:70},
-    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-    font: {size:18, color: getComputedStyle(document.documentElement).getPropertyValue('--text')}
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
+
+  const BASE = {
+    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+    font:{size:13,color:textColor},
+    margin:{t:48,l:30,r:30,b:20},
+    showlegend:false
   };
-  Plotly.react('c1', [{x:cats,y:qty,type:'bar',text:qty,textposition:'outside'}], {...L,title:{text:'Qty by Category',font:{size:24}}});
-  Plotly.react('c2', [{labels:cats,values:weights,type:'pie',hole:.45,textinfo:'label+value+percent',textfont:{size:16}}], {...L,title:{text:'Weight by Category',font:{size:24}}});
-  Plotly.react('c3', [{labels:smith,values:smithQty,type:'pie',hole:.45,textinfo:'label+value+percent',textfont:{size:16}}], {...L,title:{text:'Qty by Smith',font:{size:24}}});
+
+  // ── C1: Bar — Qty by Category ──────────────────────────────────────────────
+  const cats    = [...new Set(rows.map(x=>x.category||'Other'))];
+  const qty     = cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
+  const weights = cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+totalNetGrams(b),0));
+
+  Plotly.react('c1',
+    [{
+      x: cats, y: qty, type:'bar',
+      marker:{color: cats.map((_,i)=>PALETTE[i%PALETTE.length])},
+      text: qty.map(String), textposition:'outside',
+      hovertemplate:'<b>%{x}</b><br>Qty: %{y}<extra></extra>',
+      cliponaxis: false
+    }],
+    {
+      ...BASE,
+      height:300,
+      title:{text:'Qty by Category',font:{size:15,weight:700}},
+      yaxis:{showgrid:true,gridcolor:'rgba(128,128,128,.15)',zeroline:false,tickfont:{size:12}},
+      xaxis:{tickfont:{size:11},tickangle:cats.length>5?-35:0},
+      margin:{t:48,l:40,r:20,b: cats.length>5?80:40}
+    }
+  );
+  makeLegend('l1', cats, qty);
+
+  // ── C2: Donut — Weight by Category ────────────────────────────────────────
+  Plotly.react('c2',
+    [{
+      labels: cats, values: weights, type:'pie', hole:.5,
+      textinfo:'none',
+      marker:{colors: cats.map((_,i)=>PALETTE[i%PALETTE.length])},
+      hovertemplate:'<b>%{label}</b><br>%{value:.2f}g<br>%{percent}<extra></extra>'
+    }],
+    {
+      ...BASE,
+      height:280,
+      title:{text:'Weight by Category',font:{size:15,weight:700}},
+      margin:{t:48,l:10,r:10,b:10}
+    }
+  );
+  makeLegend('l2', cats, weights, 'g');
+
+  // ── C3: Donut — Qty by Goldsmith ──────────────────────────────────────────
+  const smith    = [...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
+  const smithQty = smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
+
+  Plotly.react('c3',
+    [{
+      labels: smith, values: smithQty, type:'pie', hole:.5,
+      textinfo:'none',
+      marker:{colors: smith.map((_,i)=>PALETTE[i%PALETTE.length])},
+      hovertemplate:'<b>%{label}</b><br>Qty: %{value}<br>%{percent}<extra></extra>'
+    }],
+    {
+      ...BASE,
+      height:280,
+      title:{text:'Qty by Smith',font:{size:15,weight:700}},
+      margin:{t:48,l:10,r:10,b:10}
+    }
+  );
+  makeLegend('l3', smith, smithQty);
 }
 
 // ─── Event Bindings ───────────────────────────────────────────────────────────
