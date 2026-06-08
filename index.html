@@ -3,228 +3,694 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Gold Inventory Pro — Enterprise Edition</title>
+  <title>Gold Inventory Pro</title>
   <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#005FCC" id="themeMetaColor">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Gold Inventory">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <style>
-    :root{
-      --bg:#f6f8fb;--card:#fff;--text:#111827;--muted:#6b7280;
-      --border:#e5e7eb;--primary:#2563eb;--net:#2563eb;--smith:#d97706;
-      --profit:#16a34a;--shadow:0 8px 30px rgba(0,0,0,.08)
+    /* ═══════════════ TOKENS ══════════════════ */
+    :root {
+      --accent:      #005FCC;
+      --accent-lt:   #007AFF;
+      --accent-pale: #EAF3FF;
+      --accent-glow: rgba(0,95,204,.18);
+
+      --bg:       #FFFFFF;
+      --surface:  #FFFFFF;
+      --surface2: #F4F7FA;
+      --border:   #C5D1E0;
+      --border2:  #8FA3B8;
+
+      --text:     #111111;
+      --text2:    #222222;
+      --text3:    #555555;
+
+      /* Deep Saturated High-Contrast Solid Badge Colors - White Text */
+      --net:      #FFFFFF;
+      --net-bg:   #003882;
+      --smith:    #FFFFFF;
+      --smith-bg: #A35200;
+      --profit:   #FFFFFF;
+      --profit-bg:#0E5E2C;
+
+      --sh-sm:  0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+      --sh-md:  0 4px 20px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.04);
+      --sh-lg:  0 16px 48px rgba(0,0,0,.12),0 4px 18px rgba(0,0,0,.06);
+      --sh-acc: 0 4px 18px rgba(0,95,204,.15);
+
+      --r-sm:8px; --r-md:14px; --r-lg:20px; --r-xl:26px;
+      --font-d:'DM Serif Display',Georgia,serif;
+      --font-b:'Inter',system-ui,-apple-system,sans-serif;
+      --ease:.2s cubic-bezier(.4,0,.2,1);
     }
-    [data-theme='dark']{
-      --bg:#0f172a;--card:#1e293b;--text:#f8fafc;--muted:#cbd5e1;
-      --border:#334155;--shadow:0 8px 30px rgba(0,0,0,.35)
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;transition:.25s}
-    .cardx,.modal-content,.table,.table td,.table th,.form-control,.drop{
-      background:var(--card)!important;color:var(--text)!important;border-color:var(--border)!important
-    }
-    .modal-content,.cardx{border-radius:18px;box-shadow:var(--shadow)}
-    .sticky-topbar{position:sticky;top:0;z-index:1000;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);padding-top:.5rem}
-    .metric{padding:1.2rem;text-align:center;height:100%}
-    .metric .v{font-weight:900;font-size:clamp(1.4rem,4vw,2.4rem);line-height:1.1;color:var(--primary)}
-    .metric .l{font-size:.95rem;font-weight:700;color:var(--muted);text-transform:uppercase}
-    .drop{border:2px dashed var(--border);border-radius:20px;padding:3rem 1rem;text-align:center;cursor:pointer}
-    .tags{display:flex;gap:.5rem;overflow:auto;padding:.4rem 0;scrollbar-width:none}.tags::-webkit-scrollbar{display:none}
-    .tag{padding:.55rem 1rem;border:1px solid var(--primary);border-radius:999px;white-space:nowrap;cursor:pointer;font-size:1rem}
-    .tag.active{background:var(--primary);color:#fff}
-    .badge-pill{min-width:80px;font-size:.88rem;padding:.45rem .6rem;word-break:break-word;white-space:normal;text-align:center;line-height:1.3}
-    .net-badge{background:var(--net)!important}
-    .smith-badge{background:var(--smith)!important}
-    .profit-badge{background:var(--profit)!important}
-    .copy-code{cursor:pointer;color:var(--primary);font-weight:700;font-size:.9rem}
-    .hidden{display:none!important}
-    .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:1rem}
-    .detail-box{border:1px solid var(--border);border-radius:14px;padding:.9rem;background:var(--bg)}
+    [data-theme="dark"] {
+      --accent:      #C4A97A;
+      --accent-lt:   #D9C09A;
+      --accent-pale: #1A1610;
+      --accent-glow: rgba(196,169,122,.11);
 
-    /* ── Desktop table ── */
-    .table{font-size:1rem}
-    .table th{font-size:1rem;font-weight:800}
-    .table td{vertical-align:middle}
+      --bg:       #12110F;
+      --surface:  #1A1815;
+      --surface2: #24211B;
+      --border:   #38332A;
+      --border2:  #524A3D;
 
-    /* ── MOBILE layout ── */
-    @media(max-width:767px){
-      /* Metrics */
-      .metric .v{font-size:1.4rem}
-      .metric .l{font-size:.8rem}
+      --text:     #F7F5F0;
+      --text2:    #E3DEC3;
+      --text3:    #A39885;
 
-      /* Hide desktop table, show card list */
-      .desktop-table{display:none!important}
-      .mobile-list{display:block!important}
+      /* Retain High-Contrast Solid Deep Badges in Dark Mode for absolute legibility */
+      --net:      #FFFFFF;
+      --net-bg:   #004B9E;
+      --smith:    #FFFFFF;
+      --smith-bg: #B85D00;
+      --profit:   #FFFFFF;
+      --profit-bg:#137A39;
 
-      /* Scrollable modal info box */
-      .detail-grid{grid-template-columns:repeat(2,1fr)}
-      .modal-dialog{margin:.5rem}
+      --sh-sm:0 2px 4px rgba(0,0,0,.4);
+      --sh-md:0 6px 20px rgba(0,0,0,.5);
+      --sh-lg:0 16px 48px rgba(0,0,0,.6);
+      --sh-acc:0 4px 18px rgba(196,169,122,.15);
     }
 
-    /* ── DESKTOP: hide card list ── */
-    @media(min-width:768px){
-      .mobile-list{display:none!important}
-      .desktop-table{display:block!important}
+    /* ═══════════════ RESET ═══════════════════ */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
+    body{
+      background:var(--bg);color:var(--text);
+      font-family:var(--font-b);font-size:16px;line-height:1.6;
+      transition:background var(--ease),color var(--ease);
+      min-height:100dvh;-webkit-font-smoothing:antialiased;
+    }
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+    ::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+    /* ═══════════════ LAYOUT ══════════════════ */
+    .wrap{max-width:1460px;margin:0 auto;padding:max(env(safe-area-inset-top),0px) calc(16px + env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+    @media(min-width:768px){.wrap{padding:0 28px 60px}}
+    @media(min-width:1200px){.wrap{padding:0 44px 60px}}
+
+    /* ═══════════════ TOPBAR ══════════════════ */
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      gap:12px;padding:24px 0 16px;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-icon{
+      width:44px;height:44px;
+      background:linear-gradient(135deg,var(--accent-lt),var(--accent));
+      border-radius:var(--r-md);display:flex;align-items:center;
+      justify-content:center;font-size:22px;box-shadow:var(--sh-acc);flex-shrink:0;
+    }
+    .brand-name{
+      font-family:var(--font-d);font-size:clamp(19px,3vw,25px);
+      color:var(--text);letter-spacing:-.3px;line-height:1.1;
+    }
+    .brand-sub{
+      font-size:12px;font-weight:700;color:var(--accent);
+      text-transform:uppercase;letter-spacing:1px;
+    }
+    .actions-group{
+      display:flex;align-items:center;gap:10px;
+    }
+    .theme-btn, .hdr-analytics-btn{
+      height:44px;border:1.5px solid var(--border);
+      border-radius:var(--r-md);background:var(--surface);
+      cursor:pointer;display:flex;align-items:center;
+      justify-content:center;transition:all var(--ease);box-shadow:var(--sh-sm);
+      font-family:var(--font-b);font-weight:600;font-size:15px;
+    }
+    .theme-btn{width:44px;font-size:18px;}
+    .hdr-analytics-btn{
+      padding:0 16px;gap:8px;color:var(--text2);
+    }
+    .theme-btn:hover, .hdr-analytics-btn:hover{border-color:var(--accent);box-shadow:var(--sh-acc)}
+    .hdr-analytics-btn.active{
+      background:var(--accent-pale);border-color:var(--accent);color:var(--accent);
+    }
+    .analytics-dot{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--border2);transition:background var(--ease);
+    }
+    .hdr-analytics-btn.active .analytics-dot{background:var(--accent)}
+
+    /* ═══════════════ DROP ZONE ═══════════════ */
+    .drop-zone{
+      position:relative;border:2px dashed var(--border2);
+      border-radius:var(--r-xl);
+      padding:clamp(40px,10vw,80px) 24px;
+      text-align:center;cursor:pointer;
+      background:var(--surface);
+      transition:all var(--ease);overflow:hidden;margin-bottom:24px;
+    }
+    .drop-zone::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 50% 110%,var(--accent-glow),transparent 68%);
+      pointer-events:none;
+    }
+    .drop-zone:hover,.drop-zone.drag-over{
+      border-color:var(--accent);background:var(--accent-pale);
+      transform:translateY(-2px);box-shadow:var(--sh-acc);
+    }
+    .drop-icon{font-size:55px;display:block;margin-bottom:16px;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+    .drop-title{font-family:var(--font-d);font-size:clamp(20px,3vw,26px);color:var(--text);margin-bottom:8px}
+    .drop-sub{font-size:14px;color:var(--text3);margin-bottom:24px}
+    .drop-btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:12px 32px;
+      background:linear-gradient(135deg,var(--accent-lt),var(--accent));
+      color:#fff;border:none;border-radius:999px;
+      font-size:15px;font-weight:700;font-family:var(--font-b);
+      cursor:pointer;box-shadow:var(--sh-acc);transition:all var(--ease);
+    }
+    .drop-btn:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(0,95,204,.3)}
+
+    /* ═══════════════ STICKY BAR ══════════════ */
+    .sticky-bar{
+      position:sticky;top:0;z-index:100;
+      background:color-mix(in srgb,var(--bg) 92%,transparent);
+      backdrop-filter:blur(20px) saturate(1.5);
+      -webkit-backdrop-filter:blur(20px) saturate(1.5);
+      padding:14px 0 10px;margin-bottom:20px;
+    }
+    .search-wrap{position:relative;margin-bottom:12px}
+    .search-icon{
+      position:absolute;left:16px;top:50%;transform:translateY(-50%);
+      color:var(--text3);font-size:16px;pointer-events:none;
+    }
+    .search-clear{
+      position:absolute;right:14px;top:50%;transform:translateY(-50%);
+      color:var(--text3);font-size:14px;cursor:pointer;
+      opacity:0;transition:opacity var(--ease);
+      background:var(--surface2);border:none;
+      width:24px;height:24px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;line-height:1;
+    }
+    .search-clear.vis{opacity:1}
+    .search-clear:hover{color:var(--text)}
+    .search-input{
+      width:100%;height:50px;padding:0 46px;
+      background:var(--surface);border:1.5px solid var(--border);
+      border-radius:var(--r-lg);font-family:var(--font-b);
+      font-size:16px;color:var(--text);outline:none;
+      transition:all var(--ease);box-shadow:var(--sh-sm);
+    }
+    .search-input::placeholder{color:var(--text3)}
+    .search-input:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px var(--accent-glow),var(--sh-sm);
     }
 
-    /* Mobile item cards */
+    /* Tags row */
+    .filter-row{
+      display:flex;align-items:center;gap:8px;overflow-x:auto;
+      scrollbar-width:none;padding:2px 0 4px;
+    }
+    .filter-row::-webkit-scrollbar{display:none}
+    .tag-pill{
+      flex-shrink:0;padding:6px 16px;
+      background:var(--surface);border:1.5px solid var(--border);
+      border-radius:999px;font-size:14px;font-weight:600;
+      color:var(--text2);cursor:pointer;
+      transition:all var(--ease);white-space:nowrap;user-select:none;
+    }
+    .tag-pill:hover{border-color:var(--accent);color:var(--accent)}
+    .tag-pill.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:var(--sh-acc)}
+
+    /* ═══════════════ METRICS ═════════════════ */
+    .metrics-grid{
+      display:grid;grid-template-columns:repeat(2,1fr);
+      gap:12px;margin-bottom:24px;
+    }
+    @media(min-width:560px){.metrics-grid{grid-template-columns:repeat(4,1fr)}}
+    .metric-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--r-lg);padding:18px;box-shadow:var(--sh-sm);
+      position:relative;overflow:hidden;
+      transition:transform var(--ease),box-shadow var(--ease);
+    }
+    .metric-card:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+    .metric-card::after{
+      content:'';position:absolute;top:0;left:0;right:0;height:4px;
+      background:linear-gradient(90deg,var(--accent-lt),var(--accent));
+    }
+    .metric-label{
+      font-size:12px;font-weight:800;text-transform:uppercase;
+      letter-spacing:1px;color:var(--text3);margin-bottom:8px;
+    }
+    .metric-val{
+      font-family:var(--font-b);font-weight:800;font-size:clamp(22px,4vw,32px);
+      color:var(--accent);line-height:1.1;margin-bottom:4px;
+      letter-spacing:-0.5px;
+    }
+    .metric-sub{font-size:12px;font-weight:600;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* ═══════════════ CHARTS ══════════════════ */
+    .charts-wrap{
+      display:none;grid-template-columns:1fr;
+      gap:14px;margin-bottom:24px;
+    }
+    .charts-wrap.vis{display:grid}
+    @media(min-width:900px){.charts-wrap{grid-template-columns:repeat(3,1fr)}}
+    .chart-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--r-lg);padding:18px;box-shadow:var(--sh-sm);overflow:hidden;
+    }
+    .chart-ttl{
+      font-size:13px;font-weight:800;text-transform:uppercase;
+      letter-spacing:1px;color:var(--text3);margin-bottom:12px;
+    }
+    .chart-box{width:100%;height:190px}
+    .chart-legend{
+      margin-top:10px;display:flex;flex-direction:column;gap:5px;
+      max-height:120px;overflow-y:auto;scrollbar-width:thin;
+    }
+    .leg-row{display:flex;align-items:center;gap:8px;font-size:13px}
+    .leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .leg-lbl{flex:1;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .leg-val{font-weight:700;color:var(--text2);white-space:nowrap}
+    .leg-pct{color:var(--text3);font-weight:500;white-space:nowrap;margin-left:4px}
+
+    /* ═══════════════ TABLE ═══════════════════ */
+    .table-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-sm);
+    }
+    .table-bar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;
+    }
+    .table-info{font-size:14px;font-weight:600;color:var(--text2)}
+    .table-info b{font-family:var(--font-b);font-weight:800;font-size:17px;color:var(--accent)}
+    .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .inv-tbl{width:100%;border-collapse:collapse;font-size:15px}
+    .inv-tbl thead tr{background:var(--surface2);border-bottom:2px solid var(--border)}
+    .inv-tbl th{
+      padding:14px 18px;text-align:left;font-size:12px;font-weight:800;
+      text-transform:uppercase;letter-spacing:1px;color:var(--text3);
+      white-space:nowrap;cursor:pointer;user-select:none;
+      transition:color var(--ease);position:relative;
+    }
+    .inv-tbl th:hover{color:var(--accent)}
+    .inv-tbl th .sarr{
+      font-size:11px;color:var(--border2);margin-left:4px;
+      transition:color var(--ease);vertical-align:middle;
+    }
+    .inv-tbl th:hover .sarr{color:var(--accent-lt)}
+    .inv-tbl th.s-asc .sarr,.inv-tbl th.s-desc .sarr{color:var(--accent)}
+    .inv-tbl tbody tr{
+      border-bottom:1px solid var(--border);cursor:pointer;
+      transition:background var(--ease);
+    }
+    .inv-tbl tbody tr:last-child{border-bottom:none}
+    .inv-tbl tbody tr:hover{background:var(--accent-pale)}
+    .inv-tbl td{padding:14px 18px;vertical-align:middle}
+    .cell-name{font-weight:700;font-size:15px;color:var(--text);letter-spacing:-0.2px}
+    .cell-code{
+      font-size:13px;color:var(--accent);font-weight:700;
+      display:inline-flex;align-items:center;gap:4px;
+      margin-top:4px;cursor:pointer;transition:opacity var(--ease);
+    }
+    .cell-code:hover{opacity:.7}
+    .cell-g{font-weight:800;font-size:16px;color:var(--text)}
+    .cell-bw{font-size:13px;font-weight:600;color:var(--text3);margin-top:2px}
+
+    /* High-Contrast Saturated Badges (White Font Always) */
+    .bdg{
+      display:inline-flex;
+      flex-direction:column;
+      align-items:flex-start;
+      padding:8px 14px;
+      border-radius:8px;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:0.8px;
+      line-height:1.2;
+      min-width:120px;
+      box-shadow: var(--sh-sm);
+      border: none;
+    }
+    .bdg-num {
+      font-size: 17px;
+      font-weight: 800;
+      margin-top: 4px;
+      letter-spacing: -0.2px;
+    }
+    .bdg-qty{
+      background:var(--surface2);color:var(--text);
+      border:1.5px solid var(--border);
+      font-weight:800;font-size:15px;
+      min-width:40px;text-align:center;
+      display:inline-block;padding:4px 12px;border-radius:999px;line-height:1.3;
+    }
+    .bdg-net{background:var(--net-bg);color:var(--net)}
+    .bdg-smith{background:var(--smith-bg);color:var(--smith)}
+    .bdg-profit{background:var(--profit-bg);color:var(--profit)}
+    .bdg-cat{
+      background:var(--surface2);color:var(--text2);
+      border:1.5px solid var(--border);font-size:13px;font-weight:600;
+      display:inline-block;padding:4px 12px;border-radius:999px;line-height:1.3;
+    }
+
+    /* Empty */
+    .empty{text-align:center;padding:48px 20px;color:var(--text3)}
+    .empty-icon{font-size:40px;margin-bottom:12px}
+    .empty p{font-size:15px;font-weight:500}
+
+    /* ═══════════════ MOBILE LIST ═════════════ */
     .mobile-list{display:none}
-    .item-card{
-      background:var(--card);border:1px solid var(--border);border-radius:16px;
-      padding:1rem;margin-bottom:.75rem;box-shadow:var(--shadow)
+    .msort-bar{
+      display:none;gap:6px;overflow-x:auto;
+      scrollbar-width:none;padding:0 0 12px;
     }
-    .item-card .item-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem}
-    .item-card .item-name{font-weight:800;font-size:1rem;line-height:1.3}
-    .item-card .item-code{font-size:.8rem;color:var(--primary);font-weight:700}
-    .item-card .item-qty{font-size:1.1rem;font-weight:900;color:var(--text)}
-    .item-card .item-weight{font-size:.82rem;color:var(--muted);margin-bottom:.6rem}
-    .item-card .badges-row{display:flex;gap:.4rem;flex-wrap:wrap}
-    .item-card .badge-label{font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:2px;text-transform:uppercase}
-    .item-card .badge-group{display:flex;flex-direction:column;align-items:flex-start;min-width:0;flex:1}
+    .msort-bar::-webkit-scrollbar{display:none}
+    .sort-chip{
+      flex-shrink:0;padding:6px 14px;background:var(--surface);
+      border:1.5px solid var(--border);border-radius:999px;
+      font-size:13px;font-weight:700;color:var(--text2);
+      cursor:pointer;white-space:nowrap;
+      transition:all var(--ease);user-select:none;
+    }
+    .sort-chip.act{background:var(--accent-pale);border-color:var(--accent);color:var(--accent)}
+    .item-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--r-lg);padding:16px;margin-bottom:10px;
+      box-shadow:var(--sh-sm);cursor:pointer;
+      transition:all var(--ease);position:relative;overflow:hidden;
+    }
+    .item-card::before{
+      content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+      background:linear-gradient(180deg,var(--accent-lt),var(--accent));
+      border-radius:0 4px 4px 0;opacity:0;transition:opacity var(--ease);
+    }
+    .item-card:hover{box-shadow:var(--sh-md);transform:translateX(2px)}
+    .item-card:hover::before{opacity:1}
+    .item-card:active{transform:scale(.99)}
+    .card-r1{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+    .card-name{font-weight:800;font-size:16px;color:var(--text);line-height:1.3;letter-spacing:-0.2px}
+    .card-code{
+      font-size:13px;color:var(--accent);font-weight:700;
+      display:flex;align-items:center;gap:4px;margin-top:4px;cursor:pointer;
+    }
+    .card-wt{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .card-badges{display:flex;gap:8px;flex-wrap:wrap}
 
-    /* Horizontal scroll wrapper for desktop table on mobile (fallback) */
-    .table-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    /* ═══════════════ MODAL ═══════════════════ */
+    .modal-ov{
+      position:fixed;inset:0;background:rgba(0,0,0,.54);
+      backdrop-filter:blur(5px);z-index:999;
+      display:flex;align-items:flex-end;justify-content:center;
+      opacity:0;pointer-events:none;transition:opacity .25s;
+    }
+    @media(min-width:640px){.modal-ov{align-items:center}}
+    .modal-ov.open{opacity:1;pointer-events:auto}
+    .modal-panel{
+      background:var(--surface);
+      border-radius:var(--r-xl) var(--r-xl) 0 0;
+      width:100%;max-height:92dvh;
+      display:flex;flex-direction:column;
+      transform:translateY(100%);
+      transition:transform .3s cubic-bezier(.4,0,.2,1);
+      box-shadow:var(--sh-lg);
+    }
+    .modal-ov.open .modal-panel{transform:translateY(0)}
+    @media(min-width:640px){
+      .modal-panel{
+        border-radius:var(--r-xl);max-width:720px;
+        max-height:88dvh;
+        transform:scale(.94) translateY(20px);
+      }
+      .modal-ov.open .modal-panel{transform:scale(1) translateY(0)}
+    }
+    .modal-handle{
+      width:40px;height:5px;background:var(--border2);
+      border-radius:3px;margin:12px auto 0;flex-shrink:0;
+    }
+    @media(min-width:640px){.modal-handle{display:none}}
+    .modal-hdr{
+      padding:18px 20px 14px;border-bottom:1px solid var(--border);
+      display:flex;align-items:flex-start;justify-content:space-between;
+      gap:12px;flex-shrink:0;
+    }
+    .modal-title{font-family:var(--font-d);font-size:clamp(19px,3vw,24px);color:var(--text);line-height:1.2}
+    .modal-close{
+      width:34px;height:34px;background:var(--surface2);border:none;
+      border-radius:50%;cursor:pointer;font-size:16px;color:var(--text2);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;transition:all var(--ease);
+    }
+    .modal-close:hover{background:var(--border);color:var(--text)}
+    .modal-body{padding:18px 20px 32px;overflow-y:auto;flex:1}
+    .modal-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .modal-wt{
+      background:var(--surface2);border:1px solid var(--border);
+      border-radius:var(--r-md);padding:16px;margin-bottom:16px;
+      display:grid;grid-template-columns:1fr 1fr;gap:14px;
+    }
+    .mwt-lbl{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:4px}
+    .mwt-val{font-weight:800;font-size:23px;color:var(--accent);letter-spacing:-0.5px}
+    .mwt-bw{font-size:14px;font-weight:600;color:var(--text2);margin-top:2px}
+    .detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
+    .detail-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px}
+    .detail-key{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px}
+    .detail-val{font-size:15px;font-weight:700;color:var(--text);word-break:break-word}
+    .copy-row{
+      display:flex;align-items:center;gap:12px;
+      background:var(--accent-pale);border:1px solid var(--border);
+      border-radius:var(--r-md);padding:12px 16px;margin-bottom:16px;cursor:pointer;
+      transition:all var(--ease);
+    }
+    .copy-row:hover{border-color:var(--accent);box-shadow:var(--sh-acc)}
+    .copy-code-txt{font-weight:800;color:var(--accent);font-size:16px;flex:1}
 
-    /* ── Chart legends ── */
-    .chart-wrap{display:flex;flex-direction:column}
-    .chart-legend{padding:.5rem .8rem 1rem;display:flex;flex-direction:column;gap:5px}
-    .legend-row{display:flex;align-items:center;gap:8px;font-size:.82rem;line-height:1.2}
-    .legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
-    .legend-label{flex:1;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .legend-val{font-weight:700;color:var(--muted);white-space:nowrap}
-    .legend-pct{font-size:.78rem;color:var(--muted);white-space:nowrap}
+    /* ═══════════════ TOAST ═══════════════════ */
+    .toast{
+      position:fixed;bottom:24px;left:50%;
+      transform:translateX(-50%) translateY(80px);
+      background:var(--text);color:var(--bg);
+      padding:12px 26px;border-radius:999px;
+      font-size:14px;font-weight:700;box-shadow:var(--sh-lg);
+      z-index:9999;transition:transform .3s cubic-bezier(.4,0,.2,1);
+      pointer-events:none;white-space:nowrap;
+    }
+    .toast.show{transform:translateX(-50%) translateY(0)}
+
+    /* ═══════════════ LOADER ══════════════════ */
+    .loader{display:flex;align-items:center;justify-content:center;gap:12px;padding:40px;color:var(--text3);font-size:15px;font-weight:600}
+    .spinner{
+      width:24px;height:24px;border:2.5px solid var(--border);
+      border-top-color:var(--accent);border-radius:50%;
+      animation:spin .7s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ═══════════════ UTILS ═══════════════════ */
+    .hidden{display:none!important}
+    @media(max-width:767px){
+      .desktop-only{display:none!important}
+      .mobile-list{display:block}
+      .msort-bar{display:flex}
+    }
+    @media(min-width:768px){.mobile-only{display:none!important}}
   </style>
 </head>
 <body>
-<div class='container-fluid py-3' style='max-width:1500px'>
+<div class="wrap">
 
-  <div class='d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap'>
-    <h4 class='fw-bold m-0'>💎 Gold Inventory Pro</h4>
-    <div class='form-check form-switch'>
-      <input id='theme' class='form-check-input' type='checkbox'>
-      <label class='form-check-label'>Dark</label>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">💎</div>
+      <div>
+        <div class="brand-name">Gold Inventory Pro</div>
+        <div class="brand-sub">Enterprise Edition</div>
+      </div>
     </div>
+    <div class="actions-group">
+      <button id="analyticsBtn" class="hdr-analytics-btn">
+        <span class="analytics-dot"></span>Analytics
+      </button>
+      <button class="theme-btn" id="themeBtn" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <div id="drop" class="drop-zone" tabindex="0" role="button" aria-label="Upload database file">
+    <span class="drop-icon">📁</span>
+    <h2 class="drop-title">Drop your database here</h2>
+    <p class="drop-sub">Supports <b>gold_stock.db</b> SQLite files</p>
+    <button class="drop-btn" tabindex="-1">Browse File</button>
+    <input id="file" type="file" accept=".db" hidden>
   </div>
 
-  <div id='drop' class='drop mb-3'>
-    📁 Click or drop <b>gold_stock.db</b>
-    <input id='file' type='file' accept='.db' hidden>
-  </div>
+  <section id="app" class="hidden">
 
-  <section id='app' class='hidden'>
-    <div class='sticky-topbar pb-2'>
-      <input id='search' class='form-control form-control-lg mb-2' placeholder='Search code, name, smith...'>
-      <div id='tags' class='tags'></div>
-      <div class='form-check form-switch mt-1'>
-        <input id='chartsToggle' class='form-check-input' type='checkbox'>
-        <label class='form-check-label'>Show Analytics</label>
+    <div class="sticky-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="search" class="search-input" type="search" placeholder="Search code, name, smith…" autocomplete="off" spellcheck="false">
+        <button class="search-clear" id="searchClear" aria-label="Clear search">✕</button>
+      </div>
+      <div class="filter-row">
+        <div id="tags" style="display:contents"></div>
       </div>
     </div>
 
-    <!-- Metrics -->
-    <div class='row g-2 my-2'>
-      <div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Unique</div><div id='u' class='v'>-</div></div></div>
-      <div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Stock Qty</div><div id='q' class='v'>-</div></div></div>
-      <div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Total Grams</div><div id='g' class='v'>-</div></div></div>
-      <div class='col-6 col-md-3'><div class='cardx metric'><div class='l'>Burmese Weight</div><div id='bw' class='v'>-</div></div></div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Unique Items</div>
+        <div id="mUniq" class="metric-val">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Stock Qty</div>
+        <div id="mQty" class="metric-val">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Grams</div>
+        <div id="mG" class="metric-val">—</div>
+        <div id="mGsub" class="metric-sub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Burmese Weight</div>
+        <div id="mBW" class="metric-val" style="font-size:clamp(14px,2.4vw,22px)">—</div>
+      </div>
     </div>
 
-    <!-- Charts -->
-    <div id='charts' class='row g-3 my-2 hidden'>
-      <div class='col-lg-4'><div class='cardx p-2 chart-wrap'><div id='c1'></div><div id='l1' class='chart-legend'></div></div></div>
-      <div class='col-lg-4'><div class='cardx p-2 chart-wrap'><div id='c2'></div><div id='l2' class='chart-legend'></div></div></div>
-      <div class='col-lg-4'><div class='cardx p-2 chart-wrap'><div id='c3'></div><div id='l3' class='chart-legend'></div></div></div>
+    <div id="chartsWrap" class="charts-wrap">
+      <div class="chart-card">
+        <div class="chart-ttl">Qty by Category</div>
+        <div id="c1" class="chart-box"></div>
+        <div id="l1" class="chart-legend"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-ttl">Weight by Category</div>
+        <div id="c2" class="chart-box"></div>
+        <div id="l2" class="chart-legend"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-ttl">Qty by Goldsmith</div>
+        <div id="c3" class="chart-box"></div>
+        <div id="l3" class="chart-legend"></div>
+      </div>
     </div>
 
-    <!-- Desktop Table -->
-    <div class='cardx p-2 mt-3 desktop-table'>
-      <div class='table-scroll-wrap'>
-        <table class='table table-hover mb-0'>
+    <div class="msort-bar mobile-only" id="msortBar">
+      <span style="font-size:12px;font-weight:800;color:var(--text3);white-space:nowrap;align-self:center">Sort:</span>
+      <button class="sort-chip" data-key="item_name">Name</button>
+      <button class="sort-chip act" data-key="net_grams_total">Grams</button>
+      <button class="sort-chip" data-key="qty_on_hand">Qty</button>
+      <button class="sort-chip" data-key="Net_Kyat">Net Wt</button>
+      <button class="sort-chip" data-key="smith_wage_kyat">Smith</button>
+      <button class="sort-chip" data-key="sale_wage_profit_kyat">Profit</button>
+      <button class="sort-chip" data-key="category">Category</button>
+    </div>
+
+    <div class="table-card desktop-only">
+      <div class="table-bar">
+        <div class="table-info">Showing <b id="rowCount">0</b> items</div>
+      </div>
+      <div class="tbl-scroll">
+        <table class="inv-tbl">
           <thead>
             <tr>
-              <th onclick="sortBy('item_name')">Item ⇅</th>
-              <th onclick="sortBy('qty_on_hand')">Qty ⇅</th>
-              <th onclick="sortBy('net_grams_total')">Total Gram ⇅</th>
-              <th>Net</th>
-              <th>Smith</th>
-              <th>Profit</th>
+              <th data-key="item_name">Item <span class="sarr">⇅</span></th>
+              <th data-key="qty_on_hand">Qty <span class="sarr">⇅</span></th>
+              <th data-key="net_grams_total">Total Grams <span class="sarr">⇅</span></th>
+              <th data-key="Net_Kyat">Net Wt <span class="sarr">⇅</span></th>
+              <th data-key="smith_wage_kyat">Smith Wage <span class="sarr">⇅</span></th>
+              <th data-key="sale_wage_profit_kyat">Profit <span class="sarr">⇅</span></th>
+              <th data-key="category">Category <span class="sarr">⇅</span></th>
             </tr>
           </thead>
-          <tbody id='tbody'></tbody>
+          <tbody id="tbody"></tbody>
         </table>
+      </div>
+      <div id="tableEmpty" class="empty hidden">
+        <div class="empty-icon">🔍</div>
+        <p>No items match your search</p>
       </div>
     </div>
 
-    <!-- Mobile Card List -->
-    <div id='mobile-list' class='mobile-list mt-3'></div>
+    <div id="mobileList" class="mobile-list mobile-only"></div>
 
   </section>
 </div>
 
-<!-- Detail Modal -->
-<div class='modal fade' id='detailModal'>
-  <div class='modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable'>
-    <div class='modal-content p-4' style='max-height:90vh;overflow-y:auto' id='modalBody'></div>
+<div id="modalOv" class="modal-ov" role="dialog" aria-modal="true">
+  <div class="modal-panel" id="modalPanel">
+    <div class="modal-handle"></div>
+    <div class="modal-hdr">
+      <h2 class="modal-title" id="modalTitle">Item Detail</h2>
+      <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
+<div id="toast" class="toast" role="status"></div>
+
 <script>
-// ─── Constants ───────────────────────────────────────────────────────────────
-// Myanmar gold weight system:
-//   1 ကျပ် (kyat) = 16 ပဲ (pae)
-//   1 ပဲ  (pae)  =  8 ရွေး (yway)
-//   1 ကျပ်        = 128 ရွေး
-//   1 ကျပ်        = 16.3296g  (official Myanmar gold standard)
-const GRAM_PER_KYAT = 16.3296;
-const GRAM_PER_PAE  = GRAM_PER_KYAT / 16;   // 1.02060g
-const GRAM_PER_YWAY = GRAM_PER_PAE  / 8;    // 0.12757g
-
-// ─── State ───────────────────────────────────────────────────────────────────
-let db = null, data = [], selected = new Set(['All']), sort = {key:'net_grams_total', asc:false};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const debounce = (fn, d=250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), d); }; };
-
-/**
- * Convert ကျပ်/ပဲ/ရွေး values to total grams.
- * Handles fractional values in each field.
- */
-function bwToGrams(kyat, pae, yway) {
-  return (+kyat || 0) * GRAM_PER_KYAT
-       + (+pae  || 0) * GRAM_PER_PAE
-       + (+yway || 0) * GRAM_PER_YWAY;
+/* ── PWA ──────────────────────────────────────────── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-/**
- * Convert grams to ကျပ်/ပဲ/ရွေး object.
- */
+/* ── CONSTANTS ────────────────────────────────────── */
+const GRAM_PER_KYAT = 16.3296;
+const GRAM_PER_PAE  = GRAM_PER_KYAT / 16;
+const GRAM_PER_YWAY = GRAM_PER_PAE  / 8;
+
+/* Distinct, vibrant enterprise tones for effortless graph categorization */
+const PALETTE = [
+  '#005FCC', '#D97706', '#059669', '#DC2626', '#7C3AED', 
+  '#2563EB', '#DB2777', '#0891B2', '#EA580C', '#4F46E5', 
+  '#16A34A', '#9333EA'
+];
+
+/* ── STATE ────────────────────────────────────────── */
+let db = null, data = [], selected = new Set(['All']),
+    sort = { key: 'net_grams_total', asc: false };
+
+// ECharts instances
+const eCharts = {};
+
+/* ── HELPERS ──────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g,
+  m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const debounce = (fn, d = 250) => {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), d); };
+};
+
+/* Weight helpers */
+function bwToGrams(kyat, pae, yway) {
+  return (+kyat||0)*GRAM_PER_KYAT + (+pae||0)*GRAM_PER_PAE + (+yway||0)*GRAM_PER_YWAY;
+}
 function gramsToBWParts(g) {
-  if (!g || g <= 0) return { kyat: 0, pae: 0, yway: 0 };
+  if (!g || g <= 0) return { kyat:0, pae:0, yway:0 };
   let rem = g;
-  const kyat = Math.floor(rem / GRAM_PER_KYAT); rem -= kyat * GRAM_PER_KYAT;
-  const pae  = Math.floor(rem / GRAM_PER_PAE);  rem -= pae  * GRAM_PER_PAE;
-  const yway = rem / GRAM_PER_YWAY;
+  const kyat = Math.floor(rem/GRAM_PER_KYAT); rem -= kyat*GRAM_PER_KYAT;
+  const pae  = Math.floor(rem/GRAM_PER_PAE);  rem -= pae*GRAM_PER_PAE;
+  const yway = rem/GRAM_PER_YWAY;
   return { kyat, pae, yway };
 }
-
-/**
- * Format grams as Burmese weight string.
- */
 function gramsToBW(g) {
-  const { kyat, pae, yway } = gramsToBWParts(g);
+  const {kyat,pae,yway} = gramsToBWParts(g);
   const o = [];
   if (kyat) o.push(`${kyat} ကျပ်`);
   if (pae)  o.push(`${pae} ပဲ`);
   if (+yway.toFixed(1)) o.push(`${yway.toFixed(1)} ရွေး`);
   return o.join(' ') || '0';
 }
-
-/**
- * Format ကျပ်/ပဲ/ရွေး integer fields directly as a display string.
- */
 function bw(k, p, y) {
   const o = [];
   if (+k) o.push(`${Math.floor(+k)} ကျပ်`);
@@ -232,289 +698,537 @@ function bw(k, p, y) {
   if (+y) o.push(`${(+y).toFixed(1)} ရွေး`);
   return o.join(' ') || '0';
 }
-
-/**
- * Net grams for one row = net weight (from ကျပ်/ပဲ/ရွေး) × qty_on_hand.
- * Falls back to weight_gram column if net BW fields are all zero.
- */
 function netGramsPerUnit(r) {
   const fromBW = bwToGrams(r.Net_Kyat, r.Net_Pe, r.Net_Yway);
-  if (fromBW > 0) return fromBW;
-  // fallback: raw gram field
-  return +r.weight_gram || 0;
+  return fromBW > 0 ? fromBW : (+r.weight_gram || 0);
 }
-
 function totalNetGrams(r) {
   return netGramsPerUnit(r) * (+r.qty_on_hand || 0);
 }
-
 const activeQty = r => (+r.qty_on_hand || 0) > 0;
 
-function copyCode(c) { navigator.clipboard.writeText(c); }
-
-// ─── DB Load ─────────────────────────────────────────────────────────────────
-async function loadDB(file) {
-  const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
-  db = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
-  const stmt = db.prepare('SELECT * FROM items');
-  data = [];
-  const cats = new Set(['All']);
-  while (stmt.step()) {
-    const r = stmt.getAsObject();
-    // Normalise net BW field names (handle different possible column names)
-    r.Net_Kyat = r['Net (ကျပ်) Net_kyat'] ?? r['Net_kyat'] ?? r['net_kyat'] ?? 0;
-    r.Net_Pe   = r['Net (ပဲ) Net_pae']    ?? r['Net_pae']  ?? r['net_pae']  ?? 0;
-    r.Net_Yway = r['Net (ရွေး) Net_yway']  ?? r['Net_yway'] ?? r['net_yway'] ?? 0;
-    // Pre-compute total net grams for sorting
-    r.net_grams_total = totalNetGrams(r);
-    data.push(r);
-    if (r.category) cats.add(r.category);
-  }
-  $('tags').innerHTML = [...cats].map(c =>
-    `<span class='tag ${c==='All'?'active':''}' onclick='setCat(${JSON.stringify(c)},this)'>${esc(c)}</span>`
-  ).join('');
-  $('drop').classList.add('hidden');
-  $('app').classList.remove('hidden');
-  render();
+/* ── TOAST ────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// ─── Category filter ─────────────────────────────────────────────────────────
-function setCat(c, el) {
+/* ── COPY CODE ────────────────────────────────────── */
+function copyCode(idx) {
+  if (idx === undefined || !data[idx]) return;
+  const code = String(data[idx].item_code);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => showToast('📋 Copied: ' + code));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 Copied: ' + code);
+  }
+}
+
+/* ── DETAIL ───────────────────────────────────────── */
+function detail(idx) {
+  const i = data[idx];
+  if (!i) return;
+  const tg = totalNetGrams(i);
+
+  $('modalTitle').textContent = i.item_name || 'Item Detail';
+
+  $('modalBody').innerHTML = `
+    <div class="copy-row" onclick="copyCode(${idx})">
+      <span>📋</span>
+      <span class="copy-code-txt">${esc(i.item_code)}</span>
+      <span style="font-size:13px;font-weight:600;color:var(--text3)">Tap to copy</span>
+    </div>
+    <div class="modal-meta">
+      ${i.category ? `<span class="bdg bdg-cat">${esc(i.category)}</span>` : ''}
+      <span class="bdg bdg-qty">${i.qty_on_hand || 0} pcs</span>
+    </div>
+    <div class="modal-wt">
+      <div>
+        <div class="mwt-lbl">Net per Unit</div>
+        <div class="mwt-val">${netGramsPerUnit(i).toFixed(4)}g</div>
+        <div class="mwt-bw">${gramsToBW(netGramsPerUnit(i))}</div>
+      </div>
+      <div>
+        <div class="mwt-lbl">Total ×${i.qty_on_hand||0}</div>
+        <div class="mwt-val">${tg.toFixed(4)}g</div>
+        <div class="mwt-bw">${gramsToBW(tg)}</div>
+      </div>
+    </div>
+    <div class="modal-meta" style="margin-bottom:16px; gap:8px;">
+      <div class="bdg bdg-net">
+        <span style="opacity:0.9">NET WEIGHT</span>
+        <div class="bdg-num">${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</div>
+      </div>
+      <div class="bdg bdg-smith">
+        <span style="opacity:0.9">SMITH WAGE</span>
+        <div class="bdg-num">${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</div>
+      </div>
+      <div class="bdg bdg-profit">
+        <span style="opacity:0.9">PROFIT</span>
+        <div class="bdg-num">${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px">All Fields</div>
+    <div class="detail-grid">
+      ${Object.entries(i).map(([k,v])=>`
+        <div class="detail-box">
+          <div class="detail-key">${esc(k)}</div>
+          <div class="detail-val">${esc(v)}</div>
+        </div>`).join('')}
+    </div>`;
+
+  openModal();
+}
+
+function openModal() {
+  $('modalOv').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  $('modalClose').focus();
+}
+function closeModal() {
+  $('modalOv').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ── DB LOAD ──────────────────────────────────────── */
+async function loadDB(file) {
+  $('drop').innerHTML = `<div class="loader"><div class="spinner"></div>Loading database…</div>`;
+  try {
+    const SQL = await initSqlJs({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
+    });
+    db = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
+    const stmt = db.prepare('SELECT * FROM items');
+    data = [];
+    const cats = ['All'];
+
+    while (stmt.step()) {
+      const r = stmt.getAsObject();
+      r.Net_Kyat = r['Net (ကျပ်) Net_kyat'] ?? r['Net_kyat'] ?? r['net_kyat'] ?? 0;
+      r.Net_Pe   = r['Net (ပဲ) Net_pae']    ?? r['Net_pae']  ?? r['net_pae']  ?? 0;
+      r.Net_Yway = r['Net (ရွေး) Net_yway']  ?? r['Net_yway'] ?? r['net_yway'] ?? 0;
+      r.net_grams_total = totalNetGrams(r);
+      data.push(r);
+      if (r.category && !cats.includes(r.category)) cats.push(r.category);
+    }
+
+    const tagsEl = $('tags');
+    tagsEl.innerHTML = '';
+    cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'tag-pill' + (c === 'All' ? ' active' : '');
+      btn.textContent = c;
+      btn.dataset.cat = c;
+      tagsEl.appendChild(btn);
+    });
+
+    $('drop').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    render();
+  } catch (err) {
+    $('drop').innerHTML = `
+      <span class="drop-icon">⚠️</span>
+      <h2 class="drop-title">Failed to load</h2>
+      <p class="drop-sub">${esc(err.message)}</p>
+      <button class="drop-btn" onclick="location.reload()">Try Again</button>`;
+  }
+}
+
+/* ── CATEGORY FILTER ──────────────────────────────── */
+$('tags').addEventListener('click', e => {
+  const btn = e.target.closest('.tag-pill');
+  if (!btn) return;
+  const c = btn.dataset.cat;
+  const allTags = $('tags').querySelectorAll('.tag-pill');
+
   if (c === 'All') {
     selected = new Set(['All']);
-    document.querySelectorAll('.tag').forEach(x => x.classList.remove('active'));
-    el.classList.add('active');
+    allTags.forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
   } else {
     selected.delete('All');
-    selected.has(c) ? (selected.delete(c), el.classList.remove('active'))
-                    : (selected.add(c),    el.classList.add('active'));
-    if (!selected.size) {
+    $('tags').querySelector('[data-cat="All"]')?.classList.remove('active');
+
+    if (selected.has(c)) {
+      selected.delete(c);
+      btn.classList.remove('active');
+    } else {
+      selected.add(c);
+      btn.classList.add('active');
+    }
+    if (selected.size === 0) {
       selected = new Set(['All']);
-      document.querySelectorAll('.tag')[0].classList.add('active');
+      $('tags').querySelector('[data-cat="All"]')?.classList.add('active');
     }
   }
   render();
-}
+});
 
-// ─── Sort ────────────────────────────────────────────────────────────────────
+/* ── SORT ─────────────────────────────────────────── */
 function sortBy(k) {
-  sort.asc = (sort.key === k) ? !sort.asc : false;
+  sort.asc = sort.key === k ? !sort.asc : false;
   sort.key = k;
+  updateSortUI();
   render();
 }
 
-// ─── Filter + Sort ───────────────────────────────────────────────────────────
+function updateSortUI() {
+  document.querySelectorAll('.inv-tbl th[data-key]').forEach(th => {
+    th.classList.remove('s-asc','s-desc');
+    if (th.dataset.key === sort.key)
+      th.classList.add(sort.asc ? 's-asc' : 's-desc');
+    const sarr = th.querySelector('.sarr');
+    if (sarr) {
+      if (th.dataset.key === sort.key)
+        sarr.textContent = sort.asc ? '▲' : '▼';
+      else
+        sarr.textContent = '⇅';
+    }
+  });
+  document.querySelectorAll('.sort-chip').forEach(chip => {
+    const active = chip.dataset.key === sort.key;
+    chip.classList.toggle('act', active);
+  });
+}
+
+document.querySelector('.inv-tbl thead').addEventListener('click', e => {
+  const th = e.target.closest('th[data-key]');
+  if (th) sortBy(th.dataset.key);
+});
+
+$('msortBar').addEventListener('click', e => {
+  const chip = e.target.closest('.sort-chip[data-key]');
+  if (chip) sortBy(chip.dataset.key);
+});
+
+/* ── FILTER + SORT ────────────────────────────────── */
 function filtered() {
-  const t = $('search').value.toLowerCase();
+  const t = $('search').value.toLowerCase().trim();
   return data
     .filter(i =>
       (selected.has('All') || selected.has(i.category)) &&
-      (`${i.item_code} ${i.item_name} ${i.goldsmith_id}`.toLowerCase().includes(t))
+      (!t || `${i.item_code} ${i.item_name} ${i.goldsmith_id||''}`.toLowerCase().includes(t))
     )
     .sort((a, b) => {
-      const va = sort.key === 'net_grams_total' ? a.net_grams_total : a[sort.key];
-      const vb = sort.key === 'net_grams_total' ? b.net_grams_total : b[sort.key];
-      if (!isNaN(va) && !isNaN(vb)) return sort.asc ? +va - +vb : +vb - +va;
-      return sort.asc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+      let va = a[sort.key];
+      let vb = b[sort.key];
+
+      if (sort.key === 'Net_Kyat') {
+        va = bwToGrams(a.Net_Kyat, a.Net_Pe, a.Net_Yway);
+        vb = bwToGrams(b.Net_Kyat, b.Net_Pe, b.Net_Yway);
+      } else if (sort.key === 'smith_wage_kyat') {
+        va = bwToGrams(a.smith_wage_kyat, a.smith_wage_pe, a.smith_wage_ywe);
+        vb = bwToGrams(b.smith_wage_kyat, b.smith_wage_pe, b.smith_wage_ywe);
+      } else if (sort.key === 'sale_wage_profit_kyat') {
+        va = bwToGrams(a.sale_wage_profit_kyat, a.sale_wage_profit_pe, a.sale_wage_profit_ywe);
+        vb = bwToGrams(b.sale_wage_profit_kyat, b.sale_wage_profit_pe, b.sale_wage_profit_ywe);
+      }
+
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return sort.asc ? na - nb : nb - na;
+      return sort.asc
+        ? String(va ?? '').localeCompare(String(vb ?? ''))
+        : String(vb ?? '').localeCompare(String(va ?? ''));
     });
 }
 
-// ─── Render ──────────────────────────────────────────────────────────────────
+/* ── RENDER ───────────────────────────────────────── */
 function render() {
   const rows = filtered();
   const activeRows = rows.filter(activeQty);
-  const totalG = activeRows.reduce((s, r) => s + totalNetGrams(r), 0);
+  const totalG = activeRows.reduce((s,r) => s + totalNetGrams(r), 0);
 
-  $('u').textContent  = rows.length;
-  $('q').textContent  = activeRows.reduce((s, r) => s + (+r.qty_on_hand || 0), 0);
-  $('g').textContent  = totalG.toFixed(2);
-  $('bw').textContent = gramsToBW(totalG);
+  $('mUniq').textContent = rows.length.toLocaleString();
+  $('mQty').textContent  = activeRows.reduce((s,r) => s + (+r.qty_on_hand||0), 0).toLocaleString();
+  $('mG').textContent    = totalG.toFixed(2);
+  $('mGsub').textContent = 'grams';
+  $('mBW').textContent   = gramsToBW(totalG);
+  $('rowCount').textContent = rows.length.toLocaleString();
 
-  // ── Desktop rows ──
-  $('tbody').innerHTML = rows.map(i => {
-    const tg = totalNetGrams(i);
-    return `<tr ondblclick='detail(${JSON.stringify(i.item_code)})'>
-      <td>
-        <b>${esc(i.item_name)}</b><br>
-        <small class='copy-code' onclick='event.stopPropagation();copyCode(${JSON.stringify(i.item_code)})'>${esc(i.item_code)} 📋</small>
-      </td>
-      <td><span class='badge text-bg-secondary badge-pill'>${i.qty_on_hand || 0}</span></td>
-      <td>
-        ${activeQty(i) ? tg.toFixed(2) : '0.00'}g<br>
-        <small>${activeQty(i) ? gramsToBW(tg) : '0'}</small>
-      </td>
-      <td><span class='badge badge-pill net-badge'>${bw(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</span></td>
-      <td><span class='badge badge-pill smith-badge'>${bw(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</span></td>
-      <td><span class='badge badge-pill profit-badge'>${bw(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</span></td>
-    </tr>`;
-  }).join('');
+  if (rows.length === 0) {
+    $('tbody').innerHTML = '';
+    $('tableEmpty').classList.remove('hidden');
+    $('mobileList').innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>No items match your search</p></div>`;
+  } else {
+    $('tableEmpty').classList.add('hidden');
 
-  // ── Mobile cards ──
-  $('mobile-list').innerHTML = rows.map(i => {
-    const tg = totalNetGrams(i);
-    return `<div class='item-card' ondblclick='detail(${JSON.stringify(i.item_code)})'>
-      <div class='item-header'>
-        <div>
-          <div class='item-name'>${esc(i.item_name)}</div>
-          <div class='item-code copy-code' onclick='event.stopPropagation();copyCode(${JSON.stringify(i.item_code)})'>${esc(i.item_code)} 📋</div>
-        </div>
-        <span class='badge text-bg-secondary' style='font-size:1rem;padding:.5rem .8rem'>${i.qty_on_hand || 0}</span>
-      </div>
-      <div class='item-weight'>
-        ⚖️ ${activeQty(i) ? tg.toFixed(2) + 'g' : '0.00g'}&nbsp;&nbsp;${activeQty(i) ? gramsToBW(tg) : '0'}
-      </div>
-      <div class='badges-row'>
-        <div class='badge-group'>
-          <div class='badge-label'>Net</div>
-          <span class='badge badge-pill net-badge'>${bw(i.Net_Kyat, i.Net_Pe, i.Net_Yway)}</span>
-        </div>
-        <div class='badge-group'>
-          <div class='badge-label'>Smith</div>
-          <span class='badge badge-pill smith-badge'>${bw(i.smith_wage_kyat, i.smith_wage_pe, i.smith_wage_ywe)}</span>
-        </div>
-        <div class='badge-group'>
-          <div class='badge-label'>Profit</div>
-          <span class='badge badge-pill profit-badge'>${bw(i.sale_wage_profit_kyat, i.sale_wage_profit_pe, i.sale_wage_profit_ywe)}</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+    // Desktop table
+    $('tbody').innerHTML = rows.map((i) => {
+      const idx = data.indexOf(i);
+      return `<tr data-idx="${idx}">
+        <td>
+          <div class="cell-name">${esc(i.item_name)}</div>
+          <div class="cell-code" data-copy="${idx}">
+            ${esc(i.item_code)} <span style="opacity:.6">📋</span>
+          </div>
+        </td>
+        <td><span class="bdg bdg-qty">${i.qty_on_hand||0}</span></td>
+        <td>
+          <div class="cell-g">${totalNetGrams(i).toFixed(2)+'g'}</div>
+          <div class="cell-bw">${gramsToBW(totalNetGrams(i))}</div>
+        </td>
+        <td>
+          <div class="bdg bdg-net">
+            <span>NET WT</span>
+            <div class="bdg-num">${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</div>
+          </div>
+        </td>
+        <td>
+          <div class="bdg bdg-smith">
+            <span>SMITH</span>
+            <div class="bdg-num">${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</div>
+          </div>
+        </td>
+        <td>
+          <div class="bdg bdg-profit">
+            <span>PROFIT</span>
+            <div class="bdg-num">${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</div>
+          </div>
+        </td>
+        <td><span class="bdg bdg-cat">${esc(i.category||'—')}</span></td>
+      </tr>`;
+    }).join('');
 
-  if (!$('charts').classList.contains('hidden')) drawCharts(activeRows);
+    // Mobile cards
+    $('mobileList').innerHTML = rows.map(i => {
+      const idx = data.indexOf(i);
+      return `<div class="item-card" data-idx="${idx}">
+        <div class="card-r1">
+          <div>
+            <div class="card-name">${esc(i.item_name)}</div>
+            <div class="card-code" data-copy="${idx}">${esc(i.item_code)} 📋</div>
+          </div>
+          <span class="bdg bdg-qty">${i.qty_on_hand||0}</span>
+        </div>
+        <div class="card-wt">
+          ⚖️ ${totalNetGrams(i).toFixed(2)+'g'}
+          <span style="color:var(--border2)">|</span>
+          ${gramsToBW(totalNetGrams(i))}
+        </div>
+        <div class="card-badges">
+          <div class="bdg bdg-net">
+            <span>NET WT</span>
+            <div class="bdg-num">${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</div>
+          </div>
+          <div class="bdg bdg-smith">
+            <span>SMITH</span>
+            <div class="bdg-num">${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</div>
+          </div>
+          <div class="bdg bdg-profit">
+            <span>PROFIT</span>
+            <div class="bdg-num">${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if ($('chartsWrap').classList.contains('vis'))
+    drawCharts(activeRows);
 }
 
-// ─── Detail Modal ─────────────────────────────────────────────────────────────
-function detail(code) {
-  const i = data.find(x => x.item_code === code);
-  if (!i) return;
-  const tg = totalNetGrams(i);
-  const rows = Object.entries(i).map(([k, v]) =>
-    `<div class='detail-box'><small style='color:var(--muted)'>${esc(k)}</small><br><b style='font-size:1rem'>${esc(v)}</b></div>`
-  ).join('');
-  $('modalBody').innerHTML = `
-    <h4>${esc(i.item_name)}</h4>
-    <p><b>Code:</b> <span class='copy-code' onclick='copyCode(${JSON.stringify(i.item_code)})'>${esc(i.item_code)} 📋</span></p>
-    <p><b>Net Weight (per unit):</b> ${netGramsPerUnit(i).toFixed(4)}g — ${gramsToBW(netGramsPerUnit(i))}</p>
-    <p><b>Total Weight (×${i.qty_on_hand || 0}):</b> ${tg.toFixed(4)}g — ${gramsToBW(tg)}</p>
-    <div class='table-scroll-wrap'><div class='detail-grid'>${rows}</div></div>`;
-  new bootstrap.Modal($('detailModal')).show();
+/* ── CLICK DELEGATES ──────────────────────────────── */
+$('tbody').addEventListener('dblclick', e => {
+  const tr = e.target.closest('tr[data-idx]');
+  if (tr) detail(+tr.dataset.idx);
+});
+$('tbody').addEventListener('click', e => {
+  const copyEl = e.target.closest('[data-copy]');
+  if (copyEl) { e.stopPropagation(); copyCode(+copyEl.dataset.copy); return; }
+});
+
+$('mobileList').addEventListener('click', e => {
+  const copyEl = e.target.closest('[data-copy]');
+  if (copyEl) { e.stopPropagation(); copyCode(+copyEl.dataset.copy); return; }
+  const card = e.target.closest('.item-card[data-idx]');
+  if (card) detail(+card.dataset.idx);
+});
+
+/* ── ECHARTS CHARTS ───────────────────────────────── */
+function getChartTheme() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  return {
+    textColor: isDark ? '#E3DEC3' : '#222222',
+    bgColor: 'transparent',
+    splitLineColor: isDark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)',
+  };
 }
 
-// ─── Charts ──────────────────────────────────────────────────────────────────
-// Plotly color palette (consistent across charts)
-const PALETTE = [
-  '#2563eb','#d97706','#16a34a','#dc2626','#7c3aed','#0891b2',
-  '#ea580c','#65a30d','#db2777','#0d9488','#92400e','#1d4ed8'
-];
+function initChart(id) {
+  if (eCharts[id]) { eCharts[id].dispose(); }
+  eCharts[id] = echarts.init($(id), null, { renderer: 'canvas' });
+  return eCharts[id];
+}
 
 function makeLegend(elId, labels, values, unit='') {
-  const total = values.reduce((a,b)=>a+b,0);
-  $( elId).innerHTML = labels.map((lbl,i)=>{
-    const pct = total>0 ? (values[i]/total*100).toFixed(1) : '0.0';
+  const total = values.reduce((a,b) => a+b, 0);
+  $(elId).innerHTML = labels.map((lbl,i) => {
+    const pct = total > 0 ? (values[i]/total*100).toFixed(1) : '0.0';
     const val = Number.isInteger(values[i]) ? values[i] : values[i].toFixed(2);
-    return `<div class='legend-row'>
-      <div class='legend-dot' style='background:${PALETTE[i%PALETTE.length]}'></div>
-      <span class='legend-label' title='${lbl}'>${lbl}</span>
-      <span class='legend-val'>${val}${unit}</span>
-      <span class='legend-pct'>${pct}%</span>
+    return `<div class="leg-row">
+      <div class="leg-dot" style="background:${PALETTE[i%PALETTE.length]}"></div>
+      <span class="leg-lbl" title="${esc(lbl)}">${esc(lbl)}</span>
+      <span class="leg-val">${val}${unit}</span>
+      <span class="leg-pct">${pct}%</span>
     </div>`;
   }).join('');
 }
 
 function drawCharts(rows) {
-  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim();
+  const th = getChartTheme();
 
-  const BASE = {
-    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-    font:{size:13,color:textColor},
-    margin:{t:48,l:30,r:30,b:20},
-    showlegend:false
-  };
+  const cats    = [...new Set(rows.map(x => x.category || 'Other'))];
+  const qty     = cats.map(c => rows.filter(x => (x.category||'Other')===c).reduce((a,b) => a+(+b.qty_on_hand||0),0));
+  const weights = cats.map(c => rows.filter(x => (x.category||'Other')===c).reduce((a,b) => a+totalNetGrams(b),0));
+  const smith    = [...new Set(rows.map(x => x.goldsmith_id || 'Unknown'))];
+  const smithQty = smith.map(s => rows.filter(x => (x.goldsmith_id||'Unknown')===s).reduce((a,b) => a+(+b.qty_on_hand||0),0));
 
-  // ── C1: Bar — Qty by Category ──────────────────────────────────────────────
-  const cats    = [...new Set(rows.map(x=>x.category||'Other'))];
-  const qty     = cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
-  const weights = cats.map(c=>rows.filter(x=>x.category===c).reduce((a,b)=>a+totalNetGrams(b),0));
-
-  Plotly.react('c1',
-    [{
-      x: cats, y: qty, type:'bar',
-      marker:{color: cats.map((_,i)=>PALETTE[i%PALETTE.length])},
-      text: qty.map(String), textposition:'outside',
-      hovertemplate:'<b>%{x}</b><br>Qty: %{y}<extra></extra>',
-      cliponaxis: false
-    }],
-    {
-      ...BASE,
-      height:300,
-      title:{text:'Qty by Category',font:{size:15,weight:700}},
-      yaxis:{showgrid:true,gridcolor:'rgba(128,128,128,.15)',zeroline:false,tickfont:{size:12}},
-      xaxis:{tickfont:{size:11},tickangle:cats.length>5?-35:0},
-      margin:{t:48,l:40,r:20,b: cats.length>5?80:40}
-    }
-  );
+  const chart1 = initChart('c1');
+  chart1.setOption({
+    backgroundColor: th.bgColor,
+    tooltip: { trigger:'axis', backgroundColor:document.documentElement.dataset.theme==='dark'?'#24211B':'#fff', borderColor:'#ccc', textStyle:{color:th.textColor, fontWeight:600} },
+    grid: { top:15, left:40, right:10, bottom: cats.length>4?64:28 },
+    xAxis: {
+      type:'category', data:cats,
+      axisLabel: { color:th.textColor, fontSize:12, fontWeight:600, rotate:cats.length>4?-28:0, overflow:'truncate', width:75 },
+      axisLine: { lineStyle:{color:th.splitLineColor} },
+      splitLine: { show:false },
+    },
+    yAxis: {
+      type:'value',
+      axisLabel:{color:th.textColor, fontSize:11, fontWeight:600},
+      splitLine:{lineStyle:{color:th.splitLineColor}},
+    },
+    series:[{
+      type:'bar', data: qty.map((v,i) => ({ value:v, itemStyle:{ color:PALETTE[i%PALETTE.length], borderRadius:[4,4,0,0] } })),
+      label:{ show:true, position:'top', color:th.textColor, fontSize:11, fontWeight:700 },
+    }]
+  });
   makeLegend('l1', cats, qty);
 
-  // ── C2: Donut — Weight by Category ────────────────────────────────────────
-  Plotly.react('c2',
-    [{
-      labels: cats, values: weights, type:'pie', hole:.5,
-      textinfo:'none',
-      marker:{colors: cats.map((_,i)=>PALETTE[i%PALETTE.length])},
-      hovertemplate:'<b>%{label}</b><br>%{value:.2f}g<br>%{percent}<extra></extra>'
-    }],
-    {
-      ...BASE,
-      height:280,
-      title:{text:'Weight by Category',font:{size:15,weight:700}},
-      margin:{t:48,l:10,r:10,b:10}
-    }
-  );
+  const chart2 = initChart('c2');
+  chart2.setOption({
+    backgroundColor: th.bgColor,
+    tooltip: {
+      trigger:'item', backgroundColor:document.documentElement.dataset.theme==='dark'?'#24211B':'#fff',
+      borderColor:'#ccc', textStyle:{color:th.textColor, fontWeight:600},
+      formatter: p => `<b>${p.name}</b><br/>${p.value.toFixed(2)}g — ${p.percent}%`
+    },
+    series:[{
+      type:'pie', radius:['42%','72%'],
+      center:['50%','50%'],
+      data: cats.map((c,i) => ({ name:c, value:weights[i], itemStyle:{color:PALETTE[i%PALETTE.length]} })),
+      label:{show:false},
+      emphasis:{ itemStyle:{ shadowBlur:8, shadowColor:'rgba(0,0,0,.2)' } }
+    }]
+  });
   makeLegend('l2', cats, weights, 'g');
 
-  // ── C3: Donut — Qty by Goldsmith ──────────────────────────────────────────
-  const smith    = [...new Set(rows.map(x=>x.goldsmith_id||'Unknown'))];
-  const smithQty = smith.map(s=>rows.filter(x=>x.goldsmith_id===s).reduce((a,b)=>a+(+b.qty_on_hand||0),0));
-
-  Plotly.react('c3',
-    [{
-      labels: smith, values: smithQty, type:'pie', hole:.5,
-      textinfo:'none',
-      marker:{colors: smith.map((_,i)=>PALETTE[i%PALETTE.length])},
-      hovertemplate:'<b>%{label}</b><br>Qty: %{value}<br>%{percent}<extra></extra>'
-    }],
-    {
-      ...BASE,
-      height:280,
-      title:{text:'Qty by Smith',font:{size:15,weight:700}},
-      margin:{t:48,l:10,r:10,b:10}
-    }
-  );
+  const chart3 = initChart('c3');
+  chart3.setOption({
+    backgroundColor: th.bgColor,
+    tooltip: {
+      trigger:'item', backgroundColor:document.documentElement.dataset.theme==='dark'?'#24211B':'#fff',
+      borderColor:'#ccc', textStyle:{color:th.textColor, fontWeight:600},
+      formatter: p => `<b>${p.name}</b><br/>Qty: ${p.value} — ${p.percent}%`
+    },
+    series:[{
+      type:'pie', radius:['42%','72%'],
+      center:['50%','50%'],
+      data: smith.map((s,i) => ({ name:s, value:smithQty[i], itemStyle:{color:PALETTE[i%PALETTE.length]} })),
+      label:{show:false},
+      emphasis:{ itemStyle:{ shadowBlur:8, shadowColor:'rgba(0,0,0,.2)' } }
+    }]
+  });
   makeLegend('l3', smith, smithQty);
+
+  requestAnimationFrame(() => {
+    Object.values(eCharts).forEach(c => c && c.resize());
+  });
 }
 
-// ─── Event Bindings ───────────────────────────────────────────────────────────
-$('drop').onclick   = () => $('file').click();
-$('file').onchange  = e => e.target.files[0] && loadDB(e.target.files[0]);
-$('search').oninput = debounce(render);
-$('chartsToggle').onchange = e => { $('charts').classList.toggle('hidden', !e.target.checked); render(); };
-$('theme').onchange = e => {
-  document.documentElement.dataset.theme = e.target.checked ? 'dark' : 'light';
-  localStorage.theme = document.documentElement.dataset.theme;
+const resizeCharts = debounce(() => {
+  Object.values(eCharts).forEach(c => c && c.resize());
+}, 200);
+window.addEventListener('resize', resizeCharts);
+
+/* ── DROP ZONE ────────────────────────────────────── */
+const dropEl = $('drop');
+dropEl.onclick = () => $('file').click();
+dropEl.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') $('file').click(); });
+dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('drag-over'); });
+dropEl.addEventListener('dragleave', () => dropEl.classList.remove('drag-over'));
+dropEl.addEventListener('drop', e => {
+  e.preventDefault(); dropEl.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0]; if (f) loadDB(f);
+});
+$('file').onchange = e => e.target.files[0] && loadDB(e.target.files[0]);
+
+/* ── SEARCH ───────────────────────────────────────── */
+const searchEl = $('search');
+searchEl.oninput = debounce(() => {
+  $('searchClear').classList.toggle('vis', searchEl.value.length > 0);
+  render();
+});
+$('searchClear').onclick = () => {
+  searchEl.value = '';
+  $('searchClear').classList.remove('vis');
   render();
 };
 
-// Drag-and-drop support
-const drop = $('drop');
-drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.borderColor='var(--primary)'; });
-drop.addEventListener('dragleave', () => { drop.style.borderColor=''; });
-drop.addEventListener('drop', e => { e.preventDefault(); drop.style.borderColor=''; const f=e.dataTransfer.files[0]; if(f)loadDB(f); });
+/* ── ANALYTICS TOGGLE ─────────────────────────────── */
+$('analyticsBtn').onclick = function() {
+  const on = $('chartsWrap').classList.toggle('vis');
+  this.classList.toggle('active', on);
+  this.setAttribute('aria-pressed', String(on));
+  if (on) {
+    drawCharts(filtered().filter(activeQty));
+  }
+};
 
-// Restore theme
+/* ── THEME TOGGLE ─────────────────────────────────── */
+$('themeBtn').onclick = function() {
+  const nowDark = document.documentElement.dataset.theme !== 'dark';
+  document.documentElement.dataset.theme = nowDark ? 'dark' : 'light';
+  this.textContent = nowDark ? '☀️' : '🌙';
+  localStorage.theme = nowDark ? 'dark' : 'light';
+  $('themeMetaColor').content = nowDark ? '#1E1C18' : '#005FCC';
+  if ($('chartsWrap').classList.contains('vis'))
+    drawCharts(filtered().filter(activeQty));
+};
+
+/* ── MODAL EVENTS ─────────────────────────────────── */
+$('modalClose').onclick = closeModal;
+$('modalOv').onclick = e => { if (e.target === $('modalOv')) closeModal(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+let touchStartY = 0;
+$('modalPanel').addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+}, { passive:true });
+$('modalPanel').addEventListener('touchmove', e => {
+  if (e.touches[0].clientY - touchStartY > 70) closeModal();
+}, { passive:true });
+
+/* ── RESTORE THEME ────────────────────────────────── */
 if (localStorage.theme === 'dark') {
-  $('theme').checked = true;
   document.documentElement.dataset.theme = 'dark';
+  $('themeBtn').textContent = '☀️';
+  $('themeMetaColor').content = '#1E1C18';
 }
+
+/* ── INIT SORT UI ─────────────────────────────────── */
+updateSortUI();
 </script>
 </body>
 </html>
