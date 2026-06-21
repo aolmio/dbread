@@ -120,7 +120,7 @@
       text-transform:uppercase;letter-spacing:1px;
     }
     .actions-group{
-      display:flex;align-items:center;gap:10px;
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;
     }
     .theme-btn, .hdr-analytics-btn{
       height:44px;border:1.5px solid var(--border);
@@ -503,6 +503,17 @@
       .msort-bar{display:flex}
     }
     @media(min-width:768px){.mobile-only{display:none!important}}
+
+    /* ═══════════════ PRIVACY HOOK LAYOUTS ═══════════════ */
+    body.hide-smith-active .smith-field,
+    body.hide-smith-active .bdg-smith {
+      display: none !important;
+    }
+    @media(min-width:900px){
+      body.hide-smith-active .charts-wrap {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -517,6 +528,12 @@
       </div>
     </div>
     <div class="actions-group">
+      <button id="hideZeroBtn" class="hdr-analytics-btn" title="Show only items in stock">
+        <span class="analytics-dot"></span>In Stock
+      </button>
+      <button id="layoutToggleBtn" class="hdr-analytics-btn" title="Toggle minimalist operational fields layout">
+        <span class="analytics-dot"></span>Compact View
+      </button>
       <button id="analyticsBtn" class="hdr-analytics-btn">
         <span class="analytics-dot"></span>Analytics
       </button>
@@ -537,7 +554,7 @@
     <div class="sticky-bar">
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input id="search" class="search-input" type="search" placeholder="Search code, name, smith…" autocomplete="off" spellcheck="false">
+        <input id="search" class="search-input" type="search" placeholder="Search code, name…" autocomplete="off" spellcheck="false">
         <button class="search-clear" id="searchClear" aria-label="Clear search">✕</button>
       </div>
       <div class="filter-row">
@@ -576,7 +593,7 @@
         <div id="c2" class="chart-box"></div>
         <div id="l2" class="chart-legend"></div>
       </div>
-      <div class="chart-card">
+      <div class="chart-card smith-field">
         <div class="chart-ttl">Qty by Goldsmith</div>
         <div id="c3" class="chart-box"></div>
         <div id="l3" class="chart-legend"></div>
@@ -589,7 +606,7 @@
       <button class="sort-chip act" data-key="net_grams_total">Grams</button>
       <button class="sort-chip" data-key="qty_on_hand">Qty</button>
       <button class="sort-chip" data-key="Net_Kyat">Net Wt</button>
-      <button class="sort-chip" data-key="smith_wage_kyat">Smith</button>
+      <button class="sort-chip smith-field" data-key="smith_wage_kyat">Smith</button>
       <button class="sort-chip" data-key="sale_wage_profit_kyat">Profit</button>
       <button class="sort-chip" data-key="category">Category</button>
     </div>
@@ -606,7 +623,7 @@
               <th data-key="qty_on_hand">Qty <span class="sarr">⇅</span></th>
               <th data-key="net_grams_total">Total Grams <span class="sarr">⇅</span></th>
               <th data-key="Net_Kyat">Net Wt <span class="sarr">⇅</span></th>
-              <th data-key="smith_wage_kyat">Smith Wage <span class="sarr">⇅</span></th>
+              <th data-key="smith_wage_kyat" class="smith-field">Smith Wage <span class="sarr">⇅</span></th>
               <th data-key="sale_wage_profit_kyat">Profit <span class="sarr">⇅</span></th>
               <th data-key="category">Category <span class="sarr">⇅</span></th>
             </tr>
@@ -658,7 +675,8 @@ const PALETTE = [
 
 /* ── STATE ────────────────────────────────────────── */
 let db = null, data = [], selected = new Set(['All']),
-    sort = { key: 'net_grams_total', asc: false };
+    sort = { key: 'net_grams_total', asc: false },
+    hideZeroQty = false;
 
 // ECharts instances
 const eCharts = {};
@@ -739,8 +757,18 @@ function detail(idx) {
   const i = data[idx];
   if (!i) return;
   const tg = totalNetGrams(i);
+  const isCompact = document.body.classList.contains('hide-smith-active');
 
   $('modalTitle').textContent = i.item_name || 'Item Detail';
+
+  // Completely wipe tracking field keys from loop variables during Compact operations
+  const customEntries = Object.entries(i).filter(([key]) => {
+    if (isCompact) {
+      const matchKey = key.toLowerCase();
+      return !matchKey.includes('smith') && !matchKey.includes('goldsmith');
+    }
+    return true;
+  });
 
   $('modalBody').innerHTML = `
     <div class="copy-row" onclick="copyCode(${idx})">
@@ -780,7 +808,7 @@ function detail(idx) {
     </div>
     <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px">All Fields</div>
     <div class="detail-grid">
-      ${Object.entries(i).map(([k,v])=>`
+      ${customEntries.map(([k,v])=>`
         <div class="detail-box">
           <div class="detail-key">${esc(k)}</div>
           <div class="detail-val">${esc(v)}</div>
@@ -914,11 +942,21 @@ $('msortBar').addEventListener('click', e => {
 /* ── FILTER + SORT ────────────────────────────────── */
 function filtered() {
   const t = $('search').value.toLowerCase().trim();
+  const isCompact = document.body.classList.contains('hide-smith-active');
+
   return data
-    .filter(i =>
-      (selected.has('All') || selected.has(i.category)) &&
-      (!t || `${i.item_code} ${i.item_name} ${i.goldsmith_id||''}`.toLowerCase().includes(t))
-    )
+    .filter(i => {
+      // Hide 0 Qty explicitly if the toggle is active
+      if (hideZeroQty && !activeQty(i)) return false;
+
+      const matchCategory = selected.has('All') || selected.has(i.category);
+      if (!matchCategory) return false;
+      if (!t) return true;
+
+      // Restrict looking up any search queries within hidden parameters during alternative mode shifts
+      const smithString = isCompact ? '' : ` ${i.goldsmith_id||''}`;
+      return `${i.item_code} ${i.item_name}${smithString}`.toLowerCase().includes(t);
+    })
     .sort((a, b) => {
       let va = a[sort.key];
       let vb = b[sort.key];
@@ -983,7 +1021,7 @@ function render() {
             <div class="bdg-num">${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</div>
           </div>
         </td>
-        <td>
+        <td class="smith-field">
           <div class="bdg bdg-smith">
             <span>SMITH</span>
             <div class="bdg-num">${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</div>
@@ -1086,12 +1124,11 @@ function makeLegend(elId, labels, values, unit='') {
 
 function drawCharts(rows) {
   const th = getChartTheme();
+  const isCompact = document.body.classList.contains('hide-smith-active');
 
   const cats    = [...new Set(rows.map(x => x.category || 'Other'))];
   const qty     = cats.map(c => rows.filter(x => (x.category||'Other')===c).reduce((a,b) => a+(+b.qty_on_hand||0),0));
   const weights = cats.map(c => rows.filter(x => (x.category||'Other')===c).reduce((a,b) => a+totalNetGrams(b),0));
-  const smith    = [...new Set(rows.map(x => x.goldsmith_id || 'Unknown'))];
-  const smithQty = smith.map(s => rows.filter(x => (x.goldsmith_id||'Unknown')===s).reduce((a,b) => a+(+b.qty_on_hand||0),0));
 
   const chart1 = initChart('c1');
   chart1.setOption({
@@ -1134,23 +1171,32 @@ function drawCharts(rows) {
   });
   makeLegend('l2', cats, weights, 'g');
 
-  const chart3 = initChart('c3');
-  chart3.setOption({
-    backgroundColor: th.bgColor,
-    tooltip: {
-      trigger:'item', backgroundColor:document.documentElement.dataset.theme==='dark'?'#24211B':'#fff',
-      borderColor:'#ccc', textStyle:{color:th.textColor, fontWeight:600},
-      formatter: p => `<b>${p.name}</b><br/>Qty: ${p.value} — ${p.percent}%`
-    },
-    series:[{
-      type:'pie', radius:['42%','72%'],
-      center:['50%','50%'],
-      data: smith.map((s,i) => ({ name:s, value:smithQty[i], itemStyle:{color:PALETTE[i%PALETTE.length]} })),
-      label:{show:false},
-      emphasis:{ itemStyle:{ shadowBlur:8, shadowColor:'rgba(0,0,0,.2)' } }
-    }]
-  });
-  makeLegend('l3', smith, smithQty);
+  // Prevent ECharts compilation overhead on hidden nodes during Compact Layout profiles
+  if (isCompact) {
+    if (eCharts['c3']) { eCharts['c3'].dispose(); delete eCharts['c3']; }
+    $('l3').innerHTML = '';
+  } else {
+    const smith    = [...new Set(rows.map(x => x.goldsmith_id || 'Unknown'))];
+    const smithQty = smith.map(s => rows.filter(x => (x.goldsmith_id||'Unknown')===s).reduce((a,b) => a+(+b.qty_on_hand||0),0));
+
+    const chart3 = initChart('c3');
+    chart3.setOption({
+      backgroundColor: th.bgColor,
+      tooltip: {
+        trigger:'item', backgroundColor:document.documentElement.dataset.theme==='dark'?'#24211B':'#fff',
+        borderColor:'#ccc', textStyle:{color:th.textColor, fontWeight:600},
+        formatter: p => `<b>${p.name}</b><br/>Qty: ${p.value} — ${p.percent}%`
+      },
+      series:[{
+        type:'pie', radius:['42%','72%'],
+        center:['50%','50%'],
+        data: smith.map((s,i) => ({ name:s, value:smithQty[i], itemStyle:{color:PALETTE[i%PALETTE.length]} })),
+        label:{show:false},
+        emphasis:{ itemStyle:{ shadowBlur:8, shadowColor:'rgba(0,0,0,.2)' } }
+      }]
+    });
+    makeLegend('l3', smith, smithQty);
+  }
 
   requestAnimationFrame(() => {
     Object.values(eCharts).forEach(c => c && c.resize());
@@ -1186,6 +1232,14 @@ $('searchClear').onclick = () => {
   render();
 };
 
+/* ── IN STOCK TOGGLE ──────────────────────────────── */
+$('hideZeroBtn').onclick = function() {
+  hideZeroQty = !hideZeroQty;
+  this.classList.toggle('active', hideZeroQty);
+  localStorage.hideZeroQty = hideZeroQty ? 'true' : 'false';
+  render();
+};
+
 /* ── ANALYTICS TOGGLE ─────────────────────────────── */
 $('analyticsBtn').onclick = function() {
   const on = $('chartsWrap').classList.toggle('vis');
@@ -1194,6 +1248,22 @@ $('analyticsBtn').onclick = function() {
   if (on) {
     drawCharts(filtered().filter(activeQty));
   }
+};
+
+/* ── PRIVACY ENHANCED LAYOUT SWITCH ───────────────── */
+$('layoutToggleBtn').onclick = function() {
+  const hideSmithState = document.body.classList.toggle('hide-smith-active');
+  this.classList.toggle('active', hideSmithState);
+  localStorage.hideSmithActive = hideSmithState ? 'true' : 'false';
+
+  // Safely fallback the target indexing pointers to ensure tracking column states don't cause deadsort zones
+  if (hideSmithState && sort.key === 'smith_wage_kyat') {
+    sort.key = 'net_grams_total';
+    sort.asc = false;
+    updateSortUI();
+  }
+
+  render();
 };
 
 /* ── THEME TOGGLE ─────────────────────────────────── */
@@ -1220,11 +1290,19 @@ $('modalPanel').addEventListener('touchmove', e => {
   if (e.touches[0].clientY - touchStartY > 70) closeModal();
 }, { passive:true });
 
-/* ── RESTORE THEME ────────────────────────────────── */
+/* ── RESTORE PERSISTED PREFERENCES ────────────────── */
 if (localStorage.theme === 'dark') {
   document.documentElement.dataset.theme = 'dark';
   $('themeBtn').textContent = '☀️';
   $('themeMetaColor').content = '#1E1C18';
+}
+if (localStorage.hideSmithActive === 'true') {
+  document.body.classList.add('hide-smith-active');
+  $('layoutToggleBtn').classList.add('active');
+}
+if (localStorage.hideZeroQty === 'true') {
+  hideZeroQty = true;
+  $('hideZeroBtn').classList.add('active');
 }
 
 /* ── INIT SORT UI ─────────────────────────────────── */
