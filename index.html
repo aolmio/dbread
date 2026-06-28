@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Gold Inventory Pro</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0284c7" id="themeMetaColor">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Gold Inventory">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-sub: #f1f5f9;
+      --border: #e2e8f0;
+      --border-focus: #0ea5e9;
+      
+      --text: #0f172a;
+      --text-sub: #475569;
+      --text-muted: #94a3b8;
+      
+      --primary: #0284c7;
+      --primary-light: #e0f2fe;
+      --primary-glow: rgba(2, 132, 199, 0.12);
+      
+      --net-bg: #1e3a8a;
+      --net-text: #ffffff;
+      --smith-bg: #b45309;
+      --smith-text: #ffffff;
+      --profit-bg: #15803d;
+      --profit-text: #ffffff;
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+      
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      
+      --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-sub: #334155;
+      --border: #334155;
+      --border-focus: #38bdf8;
+      
+      --text: #f8fafc;
+      --text-sub: #cbd5e1;
+      --text-muted: #64748b;
+      
+      --primary: #38bdf8;
+      --primary-light: #0c4a6e;
+      --primary-glow: rgba(56, 189, 248, 0.15);
+      
+      --net-bg: #2563eb;
+      --net-text: #ffffff;
+      --smith-bg: #d97706;
+      --smith-text: #ffffff;
+      --profit-bg: #16a34a;
+      --profit-text: #ffffff;
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 15px;
+      line-height: 1.5;
+      transition: background var(--transition), color var(--transition);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: clamp(16px, 4vw, 32px);
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+
+    @media (min-width: 768px) {
+      .wrap {
+        padding-bottom: 48px;
+      }
+    }
+
+    .topbar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    @media (min-width: 768px) {
+      .topbar {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary), #0ea5e9);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .brand-name {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .actions-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hdr-btn {
+      height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text-sub);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 13px;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .hdr-btn:hover {
+      border-color: var(--primary);
+      color: var(--text);
+      background: var(--surface-sub);
+    }
+
+    .hdr-btn.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .theme-btn {
+      width: 40px;
+      padding: 0;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .hdr-btn.active .dot {
+      background: var(--primary);
+      transform: scale(1.2);
+    }
+
+    .selector-container {
+      display: inline-flex;
+      background: var(--surface-sub);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .selector-btn {
+      height: 32px;
+      padding: 0 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-sub);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 12px;
+      border-radius: calc(var(--radius-md) - 2px);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .selector-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 64px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--primary);
+      background: var(--primary-glow);
+      transform: translateY(-2px);
+    }
+
+    .drop-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .drop-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .drop-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .drop-btn {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 10px 24px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      transition: var(--transition);
+    }
+
+    .drop-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .sticky-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: color-mix(in srgb, var(--bg) 85%, transparent);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 12px 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid transparent;
+    }
+
+    .search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 48px;
+      padding: 0 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-display);
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--surface-sub);
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .search-clear.vis {
+      opacity: 1;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+
+    .filter-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tag-pill {
+      flex-shrink: 0;
+      padding: 6px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .tag-pill:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tag-pill.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .metrics-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+      }
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .metric-val {
+      font-size: clamp(20px, 2.5vw, 28px);
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .metric-sub {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .charts-wrap {
+      display: none;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .charts-wrap.vis {
+      display: grid;
+    }
+
+    @media (min-width: 992px) {
+      .charts-wrap {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chart-ttl {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .chart-box {
+      width: 100%;
+      height: 180px;
+    }
+
+    .chart-legend {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 110px;
+      overflow-y: auto;
+    }
+
+    .leg-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .leg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .leg-lbl {
+      flex: 1;
+      font-weight: 500;
+      color: var(--text-sub);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .leg-val {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .leg-pct {
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table-bar {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .table-info {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-sub);
+    }
+
+    .table-info b {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .tbl-scroll {
+      overflow-x: auto;
+    }
+
+    .inv-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    .inv-tbl th {
+      padding: 14px 20px;
+      background: var(--surface-sub);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-sub);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      transition: var(--transition);
+    }
+
+    .inv-tbl th:hover {
+      background: var(--border);
+    }
+
+    .inv-tbl th .sarr {
+      display: inline-block;
+      margin-left: 4px;
+      color: var(--text-muted);
+    }
+
+    .inv-tbl th.s-asc .sarr, .inv-tbl th.s-desc .sarr {
+      color: var(--primary);
+    }
+
+    .inv-tbl tbody tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .inv-tbl tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .inv-tbl tbody tr:hover {
+      background: var(--surface-sub);
+    }
+
+    .inv-tbl td {
+      padding: 16px 20px;
+      vertical-align: middle;
+    }
+
+    .cell-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .cell-code {
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .cell-g {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .cell-bw {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .bdg {
+      display: inline-flex;
+      flex-direction: column;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      min-width: 110px;
+    }
+
+    .bdg span {
+      opacity: 0.8;
+      font-size: 9px;
+    }
+
+    .bdg-num {
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    .bdg-qty {
+      background: var(--surface-sub);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      min-width: unset;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .bdg-net { background: var(--net-bg); color: var(--net-text); }
+    .bdg-smith { background: var(--smith-bg); color: var(--smith-text); }
+    .bdg-profit { background: var(--profit-bg); color: var(--profit-text); }
+    
+    .bdg-cat {
+      background: var(--surface-sub);
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      min-width: unset;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .mobile-list {
+      display:none;
+    }
+
+    .msort-bar {
+      display: none;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 12px;
+      align-items: center;
+    }
+
+    .msort-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sort-chip {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .sort-chip.act {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .item-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-r1 {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .card-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .card-code {
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .card-wt {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+
+    .card-badges {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .card-badges::-webkit-scrollbar {
+      display: none;
+    }
+
+    .modal-ov {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-ov.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-panel {
+      background: var(--surface);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%;
+      max-height: 85dvh;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .modal-ov.open .modal-panel {
+      transform: translateY(0);
+    }
+
+    @media (min-width: 640px) {
+      .modal-ov {
+        align-items: center;
+      }
+      .modal-panel {
+        border-radius: var(--radius-xl);
+        max-width: 600px;
+        max-height: 80dvh;
+        transform: scale(0.95);
+      }
+      .modal-ov.open .modal-panel {
+        transform: scale(1);
+      }
+    }
+
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 10px auto 0;
+    }
+
+    @media (min-width: 640px) {
+      .modal-handle { display: none; }
+    }
+
+    .modal-hdr {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--surface-sub);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-sub);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .copy-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--primary-glow);
+      border: 1px dashed var(--primary);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+
+    .copy-code-txt {
+      font-weight: 700;
+      color: var(--primary);
+      flex: 1;
+    }
+
+    .modal-meta {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .modal-wt {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      background: var(--surface-sub);
+      padding: 14px;
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+    }
+
+    .mwt-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .mwt-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .mwt-bw {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    .detail-box {
+      background: var(--surface-sub);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .detail-key {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .detail-val {
+      font-size: 13px;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow-xl);
+      z-index: 200;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      .mobile-list { display: block; }
+      .msort-bar { display: flex; }
+    }
+
+    body.hide-smith-active .smith-field,
+    body.hide-smith-active .bdg-smith {
+      display: none !important;
+    }
+
+    @media (min-width: 992px) {
+      body.hide-smith-active .charts-wrap {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">📦</div>
+      <div>
+        <div class="brand-name">Gold Inventory Pro</div>
+        <div class="brand-sub">Enterprise Edition</div>
+      </div>
+    </div>
+    <div class="actions-group">
+      <div class="selector-container">
+        <button id="baseNewBtn" class="selector-btn active">16.3g Base</button>
+        <button id="baseTradBtn" class="selector-btn">16.606g Base</button>
+      </div>
+      <button id="hideZeroBtn" class="hdr-btn">
+        <span class="dot"></span>In Stock
+      </button>
+      <button id="layoutToggleBtn" class="hdr-btn">
+        <span class="dot"></span>Compact View
+      </button>
+      <button id="analyticsBtn" class="hdr-btn">
+        <span class="dot"></span>Analytics
+      </button>
+      <button class="hdr-btn theme-btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <div id="drop" class="drop-zone" tabindex="0" role="button">
+    <span class="drop-icon">📂</span>
+    <h2 class="drop-title">Upload Core Database File</h2>
+    <p class="drop-sub">Drag and drop or browse standard <b>gold_stock.db</b> files</p>
+    <button class="drop-btn" tabindex="-1">Browse File</button>
+    <input id="file" type="file" accept=".db" hidden>
+  </div>
+
+  <section id="app" class="hidden">
+    <div class="sticky-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="search" class="search-input" type="search" placeholder="Search standard codes, item names..." autocomplete="off" spellcheck="false">
+        <button class="search-clear" id="searchClear">✕</button>
+      </div>
+      <div class="filter-row">
+        <div id="tags" style="display:contents"></div>
+      </div>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Unique Items</div>
+        <div id="mUniq" class="metric-val">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Stock Qty</div>
+        <div id="mQty" class="metric-val">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Grams</div>
+        <div id="mG" class="metric-val">—</div>
+        <div id="mGsub" class="metric-sub">grams</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Burmese Weight</div>
+        <div id="mBW" class="metric-val" style="font-size: clamp(14px, 2vw, 20px);">—</div>
+      </div>
+    </div>
+
+    <div id="chartsWrap" class="charts-wrap">
+      <div class="chart-card">
+        <div class="chart-ttl">Qty by Category</div>
+        <div id="c1" class="chart-box"></div>
+        <div id="l1" class="chart-legend"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-ttl">Weight by Category</div>
+        <div id="c2" class="chart-box"></div>
+        <div id="l2" class="chart-legend"></div>
+      </div>
+      <div class="chart-card smith-field">
+        <div class="chart-ttl">Qty by Goldsmith</div>
+        <div id="c3" class="chart-box"></div>
+        <div id="l3" class="chart-legend"></div>
+      </div>
+    </div>
+
+    <div class="msort-bar mobile-only" id="msortBar">
+      <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; white-space:nowrap; padding-right:4px;">Sort:</span>
+      <button class="sort-chip" data-key="item_name">Name</button>
+      <button class="sort-chip act" data-key="net_grams_total">Grams</button>
+      <button class="sort-chip" data-key="qty_on_hand">Qty</button>
+      <button class="sort-chip" data-key="Net_Kyat">Net Wt</button>
+      <button class="sort-chip smith-field" data-key="smith_wage_kyat">Smith</button>
+      <button class="sort-chip" data-key="sale_wage_profit_kyat">Profit</button>
+      <button class="sort-chip" data-key="category">Category</button>
+    </div>
+
+    <div class="table-card desktop-only">
+      <div class="table-bar">
+        <div class="table-info">Showing <b id="rowCount">0</b> inventory items</div>
+      </div>
+      <div class="tbl-scroll">
+        <table class="inv-tbl">
+          <thead>
+            <tr>
+              <th data-key="item_name">Item <span class="sarr">⇅</span></th>
+              <th data-key="qty_on_hand">Qty <span class="sarr">⇅</span></th>
+              <th data-key="net_grams_total">Total Grams <span class="sarr">⇅</span></th>
+              <th data-key="Net_Kyat">Net Wt <span class="sarr">⇅</span></th>
+              <th data-key="smith_wage_kyat" class="smith-field">Smith Wage <span class="sarr">⇅</span></th>
+              <th data-key="sale_wage_profit_kyat">Profit <span class="sarr">⇅</span></th>
+              <th data-key="category">Category <span class="sarr">⇅</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="tableEmpty" class="empty hidden">
+        <div class="empty-icon">🔍</div>
+        <p>No operational items match your search filters</p>
+      </div>
+    </div>
+
+    <div id="mobileList" class="mobile-list mobile-only"></div>
+  </section>
+</div>
+
+<div id="modalOv" class="modal-ov" role="dialog" aria-modal="true">
+  <div class="modal-panel" id="modalPanel">
+    <div class="modal-handle"></div>
+    <div class="modal-hdr">
+      <h2 class="modal-title" id="modalTitle">Item Detail</h2>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+let GRAM_PER_KYAT = 16.3296;
+let GRAM_PER_PAE  = GRAM_PER_KYAT / 16;
+let GRAM_PER_YWAY = GRAM_PER_PAE  / 8;
+
+const PALETTE = [
+  '#0284c7', '#d97706', '#16a34a', '#dc2626', '#4f46e5', 
+  '#2563eb', '#db2777', '#0891b2', '#ea580c', '#7c3aed', 
+  '#059669', '#9333ea'
+];
+
+let db = null, data = [], selected = new Set(['All']),
+    sort = { key: 'net_grams_total', asc: false },
+    hideZeroQty = false, hasSmithData = true;
+
+const eCharts = {};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g,
+  m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const debounce = (fn, d = 250) => {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), d); };
+};
+
+function updateGramBaseConstants(baseValue) {
+  GRAM_PER_KYAT = baseValue;
+  GRAM_PER_PAE  = GRAM_PER_KYAT / 16;
+  GRAM_PER_YWAY = GRAM_PER_PAE / 8;
+  
+  if (data.length > 0) {
+    data.forEach(r => {
+      r.net_grams_total = totalNetGrams(r);
+    });
+    render();
+  }
+}
+
+function bwToGrams(kyat, pae, yway) {
+  return (+kyat||0)*GRAM_PER_KYAT + (+pae||0)*GRAM_PER_PAE + (+yway||0)*GRAM_PER_YWAY;
+}
+function gramsToBWParts(g) {
+  if (!g || g <= 0) return { kyat:0, pae:0, yway:0 };
+  let rem = g;
+  const kyat = Math.floor(rem/GRAM_PER_KYAT); rem -= kyat*GRAM_PER_KYAT;
+  const pae  = Math.floor(rem/GRAM_PER_PAE);  rem -= pae*GRAM_PER_PAE;
+  const yway = rem/GRAM_PER_YWAY;
+  return { kyat, pae, yway };
+}
+function gramsToBW(g) {
+  const {kyat,pae,yway} = gramsToBWParts(g);
+  const o = [];
+  if (kyat) o.push(`${kyat} ကျပ်`);
+  if (pae)  o.push(`${pae} ပဲ`);
+  if (+yway.toFixed(1)) o.push(`${yway.toFixed(1)} ရွေး`);
+  return o.join(' ') || '0';
+}
+function bw(k, p, y) {
+  const o = [];
+  if (+k) o.push(`${Math.floor(+k)} ကျပ်`);
+  if (+p) o.push(`${Math.floor(+p)} ပဲ`);
+  if (+y) o.push(`${(+y).toFixed(1)} ရွေး`);
+  return o.join(' ') || '0';
+}
+function netGramsPerUnit(r) {
+  const fromBW = bwToGrams(r.Net_Kyat, r.Net_Pe, r.Net_Yway);
+  return fromBW > 0 ? fromBW : (+r.weight_gram || 0);
+}
+function totalNetGrams(r) {
+  return netGramsPerUnit(r) * (+r.qty_on_hand || 0);
+}
+const activeQty = r => (+r.qty_on_hand || 0) > 0;
+
+let toastTimer;
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function copyCode(idx) {
+  if (idx === undefined || !data[idx]) return;
+  const code = String(data[idx].item_code);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => showToast('📋 Copied: ' + code));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 Copied: ' + code);
+  }
+}
+
+function detail(idx) {
+  const i = data[idx];
+  if (!i) return;
+  const tg = totalNetGrams(i);
+  const isCompact = document.body.classList.contains('hide-smith-active');
+
+  $('modalTitle').textContent = i.item_name || 'Item Detail';
+
+  const customEntries = Object.entries(i).filter(([key]) => {
+    if (isCompact) {
+      const matchKey = key.toLowerCase();
+      return !matchKey.includes('smith') && !matchKey.includes('goldsmith');
+    }
+    return true;
+  });
+
+  $('modalBody').innerHTML = `
+    <div class="copy-row" onclick="copyCode(${idx})">
+      <span>📋</span>
+      <span class="copy-code-txt">${esc(i.item_code)}</span>
+      <span style="font-size:12px; font-weight:600; color:var(--text-muted)">Tap to copy</span>
+    </div>
+    <div class="modal-meta">
+      ${i.category ? `<span class="bdg bdg-cat">${esc(i.category)}</span>` : ''}
+      <span class="bdg bdg-qty">${i.qty_on_hand || 0} pcs</span>
+    </div>
+    <div class="modal-wt">
+      <div>
+        <div class="mwt-lbl">Net per Unit</div>
+        <div class="mwt-val">${netGramsPerUnit(i).toFixed(4)}g</div>
+        <div class="mwt-bw">${gramsToBW(netGramsPerUnit(i))}</div>
+      </div>
+      <div>
+        <div class="mwt-lbl">Total ×${i.qty_on_hand||0}</div>
+        <div class="mwt-val">${tg.toFixed(4)}g</div>
+        <div class="mwt-bw">${gramsToBW(tg)}</div>
+      </div>
+    </div>
+    <div class="modal-meta" style="margin-bottom:16px; gap:6px; flex-wrap: wrap;">
+      <div class="bdg bdg-net">
+        <span>NET WEIGHT</span>
+        <div class="bdg-num">${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</div>
+      </div>
+      <div class="bdg bdg-smith">
+        <span>SMITH WAGE</span>
+        <div class="bdg-num">${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</div>
+      </div>
+      <div class="bdg bdg-profit">
+        <span>PROFIT</span>
+        <div class="bdg-num">${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</div>
+      </div>
+    </div>
+    <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">All Fields</div>
+    <div class="detail-grid">
+      ${customEntries.map(([k,v])=>`
+        <div class="detail-box">
+          <div class="detail-key">${esc(k)}</div>
+          <div class="detail-val">${esc(v)}</div>
+        </div>`).join('')}
+    </div>`;
+
+  openModal();
+}
+
+function openModal() {
+  $('modalOv').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  $('modalOv').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function loadDB(file) {
+  $('drop').innerHTML = `<div class="loader"><div class="spinner"></div>Loading database pipeline…</div>`;
+  try {
+    const SQL = await initSqlJs({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
+    });
+    db = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
+    
+    let checkSmithStmt;
+    try {
+      checkSmithStmt = db.prepare("PRAGMA table_info(items)");
+      let columns = [];
+      while(checkSmithStmt.step()) {
+        columns.push(checkSmithStmt.getAsObject().name.toLowerCase());
+      }
+      const findSmithCol = columns.some(c => c.includes('smith'));
+      
+      if (!findSmithCol) {
+        hasSmithData = false;
+      } else {
+        const testStmt = db.prepare("SELECT * FROM items WHERE smith_wage_kyat > 0 OR goldsmith_id IS NOT NULL LIMIT 1");
+        hasSmithData = testStmt.step();
+        testStmt.free();
+      }
+    } catch(e) {
+      hasSmithData = false;
+    } finally {
+      if (checkSmithStmt) checkSmithStmt.free();
+    }
+
+    if (!hasSmithData) {
+      document.body.classList.add('hide-smith-active');
+      $('layoutToggleBtn').classList.add('hidden');
+      if (sort.key === 'smith_wage_kyat') {
+        sort.key = 'net_grams_total';
+        sort.asc = false;
+        updateSortUI();
+      }
+    } else {
+      if (localStorage.hideSmithActive === 'true') {
+        document.body.classList.add('hide-smith-active');
+        $('layoutToggleBtn').classList.add('active');
+      } else {
+        document.body.classList.remove('hide-smith-active');
+        $('layoutToggleBtn').classList.remove('active');
+      }
+      $('layoutToggleBtn').classList.remove('hidden');
+    }
+
+    const stmt = db.prepare('SELECT * FROM items');
+    data = [];
+    const cats = ['All'];
+
+    while (stmt.step()) {
+      const r = stmt.getAsObject();
+      r.Net_Kyat = r['Net (ကျပ်) Net_kyat'] ?? r['Net_kyat'] ?? r['net_kyat'] ?? 0;
+      r.Net_Pe   = r['Net (ပဲ) Net_pae']    ?? r['Net_pae']  ?? r['net_pae']  ?? 0;
+      r.Net_Yway = r['Net (ရွေး) Net_yway']  ?? r['Net_yway'] ?? r['net_yway'] ?? 0;
+      r.net_grams_total = totalNetGrams(r);
+      data.push(r);
+      if (r.category && !cats.includes(r.category)) cats.push(r.category);
+    }
+    stmt.free();
+
+    const tagsEl = $('tags');
+    tagsEl.innerHTML = '';
+    cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'tag-pill' + (c === 'All' ? ' active' : '');
+      btn.textContent = c;
+      btn.dataset.cat = c;
+      tagsEl.appendChild(btn);
+    });
+
+    $('drop').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    render();
+  } catch (err) {
+    $('drop').innerHTML = `
+      <span class="drop-icon">⚠️</span>
+      <h2 class="drop-title">Failed to load</h2>
+      <p class="drop-sub">${esc(err.message)}</p>
+      <button class="drop-btn" onclick="location.reload()">Try Again</button>`;
+  }
+}
+
+$('tags').addEventListener('click', e => {
+  const btn = e.target.closest('.tag-pill');
+  if (!btn) return;
+  const c = btn.dataset.cat;
+  const allTags = $('tags').querySelectorAll('.tag-pill');
+
+  if (c === 'All') {
+    selected = new Set(['All']);
+    allTags.forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    selected.delete('All');
+    $('tags').querySelector('[data-cat="All"]')?.classList.remove('active');
+
+    if (selected.has(c)) {
+      selected.delete(c);
+      btn.classList.remove('active');
+    } else {
+      selected.add(c);
+      btn.classList.add('active');
+    }
+    if (selected.size === 0) {
+      selected = new Set(['All']);
+      $('tags').querySelector('[data-cat="All"]')?.classList.add('active');
+    }
+  }
+  render();
+});
+
+function sortBy(k) {
+  if (!hasSmithData && k === 'smith_wage_kyat') return;
+  sort.asc = sort.key === k ? !sort.asc : false;
+  sort.key = k;
+  updateSortUI();
+  render();
+}
+
+function updateSortUI() {
+  document.querySelectorAll('.inv-tbl th[data-key]').forEach(th => {
+    th.classList.remove('s-asc','s-desc');
+    if (th.dataset.key === sort.key)
+      th.classList.add(sort.asc ? 's-asc' : 's-desc');
+    const sarr = th.querySelector('.sarr');
+    if (sarr) {
+      if (th.dataset.key === sort.key)
+        sarr.textContent = sort.asc ? '▲' : '▼';
+      else
+        sarr.textContent = '⇅';
+    }
+  });
+  document.querySelectorAll('.sort-chip').forEach(chip => {
+    const active = chip.dataset.key === sort.key;
+    chip.classList.toggle('act', active);
+  });
+}
+
+document.querySelector('.inv-tbl thead').addEventListener('click', e => {
+  const th = e.target.closest('th[data-key]');
+  if (th) sortBy(th.dataset.key);
+});
+
+$('msortBar').addEventListener('click', e => {
+  const chip = e.target.closest('.sort-chip[data-key]');
+  if (chip) sortBy(chip.dataset.key);
+});
+
+function filtered() {
+  const t = $('search').value.toLowerCase().trim();
+  const isCompact = document.body.classList.contains('hide-smith-active');
+
+  return data
+    .filter(i => {
+      if (hideZeroQty && !activeQty(i)) return false;
+
+      const matchCategory = selected.has('All') || selected.has(i.category);
+      if (!matchCategory) return false;
+      if (!t) return true;
+
+      const smithString = isCompact ? '' : ` ${i.goldsmith_id||''}`;
+      return `${i.item_code} ${i.item_name}${smithString}`.toLowerCase().includes(t);
+    })
+    .sort((a, b) => {
+      let va = a[sort.key];
+      let vb = b[sort.key];
+
+      if (sort.key === 'Net_Kyat') {
+        va = bwToGrams(a.Net_Kyat, a.Net_Pe, a.Net_Yway);
+        vb = bwToGrams(b.Net_Kyat, b.Net_Pe, b.Net_Yway);
+      } else if (sort.key === 'smith_wage_kyat') {
+        va = bwToGrams(a.smith_wage_kyat, a.smith_wage_pe, a.smith_wage_ywe);
+        vb = bwToGrams(b.smith_wage_kyat, b.smith_wage_pe, b.smith_wage_ywe);
+      } else if (sort.key === 'sale_wage_profit_kyat') {
+        va = bwToGrams(a.sale_wage_profit_kyat, a.sale_wage_profit_pe, a.sale_wage_profit_ywe);
+        vb = bwToGrams(b.sale_wage_profit_kyat, b.sale_wage_profit_pe, b.sale_wage_profit_ywe);
+      }
+
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return sort.asc ? na - nb : nb - na;
+      return sort.asc
+        ? String(va ?? '').localeCompare(String(vb ?? ''))
+        : String(vb ?? '').localeCompare(String(va ?? ''));
+    });
+}
+
+function render() {
+  const rows = filtered();
+  const activeRows = rows.filter(activeQty);
+  const totalG = activeRows.reduce((s,r) => s + totalNetGrams(r), 0);
+
+  $('mUniq').textContent = rows.length.toLocaleString();
+  $('mQty').textContent  = activeRows.reduce((s,r) => s + (+r.qty_on_hand||0), 0).toLocaleString();
+  $('mG').textContent    = totalG.toFixed(2);
+  $('mGsub').textContent = 'grams';
+  $('mBW').textContent   = gramsToBW(totalG);
+  $('rowCount').textContent = rows.length.toLocaleString();
+
+  if (rows.length === 0) {
+    $('tbody').innerHTML = '';
+    $('tableEmpty').classList.remove('hidden');
+    $('mobileList').innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>No operational items match your filters</p></div>`;
+  } else {
+    $('tableEmpty').classList.add('hidden');
+
+    $('tbody').innerHTML = rows.map((i) => {
+      const idx = data.indexOf(i);
+      return `<tr data-idx="${idx}">
+        <td>
+          <div class="cell-name">${esc(i.item_name)}</div>
+          <div class="cell-code" data-copy="${idx}">
+            ${esc(i.item_code)} <span style="opacity:.6; cursor:pointer;">📋</span>
+          </div>
+        </td>
+        <td><span class="bdg bdg-qty">${i.qty_on_hand||0}</span></td>
+        <td>
+          <div class="cell-g">${totalNetGrams(i).toFixed(2)+'g'}</div>
+          <div class="cell-bw">${gramsToBW(totalNetGrams(i))}</div>
+        </td>
+        <td>
+          <div class="bdg bdg-net">
+            <span>NET WT</span>
+            <div class="bdg-num">${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</div>
+          </div>
+        </td>
+        <td class="smith-field">
+          <div class="bdg bdg-smith">
+            <span>SMITH</span>
+            <div class="bdg-num">${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</div>
+          </div>
+        </td>
+        <td>
+          <div class="bdg bdg-profit">
+            <span>PROFIT</span>
+            <div class="bdg-num">${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</div>
+          </div>
+        </td>
+        <td><span class="bdg bdg-cat">${esc(i.category||'—')}</span></td>
+      </tr>`;
+    }).join('');
+
+    $('mobileList').innerHTML = rows.map(i => {
+      const idx = data.indexOf(i);
+      return `<div class="item-card" data-idx="${idx}">
+        <div class="card-r1">
+          <div>
+            <div class="card-name">${esc(i.item_name)}</div>
+            <div class="card-code" data-copy="${idx}">${esc(i.item_code)} 📋</div>
+          </div>
+          <span class="bdg bdg-qty">${i.qty_on_hand||0}</span>
+        </div>
+        <div class="card-wt">
+          ⚖️ ${totalNetGrams(i).toFixed(2)+'g'}
+          <span style="color:var(--border)">|</span>
+          ${gramsToBW(totalNetGrams(i))}
+        </div>
+        <div class="card-badges">
+          <div class="bdg bdg-net">
+            <span>NET WT</span>
+            <div class="bdg-num">${bw(i.Net_Kyat,i.Net_Pe,i.Net_Yway)}</div>
+          </div>
+          <div class="bdg bdg-smith">
+            <span>SMITH</span>
+            <div class="bdg-num">${bw(i.smith_wage_kyat,i.smith_wage_pe,i.smith_wage_ywe)}</div>
+          </div>
+          <div class="bdg bdg-profit">
+            <span>PROFIT</span>
+            <div class="bdg-num">${bw(i.sale_wage_profit_kyat,i.sale_wage_profit_pe,i.sale_wage_profit_ywe)}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if ($('chartsWrap').classList.contains('vis'))
+    drawCharts(activeRows);
+}
+
+$('tbody').addEventListener('dblclick', e => {
+  const tr = e.target.closest('tr[data-idx]');
+  if (tr) detail(+tr.dataset.idx);
+});
+$('tbody').addEventListener('click', e => {
+  const copyEl = e.target.closest('[data-copy]');
+  if (copyEl) { e.stopPropagation(); copyCode(+copyEl.dataset.copy); return; }
+});
+
+$('mobileList').addEventListener('click', e => {
+  const copyEl = e.target.closest('[data-copy]');
+  if (copyEl) { e.stopPropagation(); copyCode(+copyEl.dataset.copy); return; }
+  const card = e.target.closest('.item-card[data-idx]');
+  if (card) detail(+card.dataset.idx);
+});
+
+function getChartTheme() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  return {
+    textColor: isDark ? '#cbd5e1' : '#0f172a',
+    bgColor: 'transparent',
+    splitLineColor: isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)',
+  };
+}
+
+function initChart(id) {
+  if (eCharts[id]) { eCharts[id].dispose(); }
+  eCharts[id] = echarts.init($(id), null, { renderer: 'canvas' });
+  return eCharts[id];
+}
+
+function makeLegend(elId, labels, values, unit='') {
+  const total = values.reduce((a,b) => a+b, 0);
+  $(elId).innerHTML = labels.map((lbl,i) => {
+    const pct = total > 0 ? (values[i]/total*100).toFixed(1) : '0.0';
+    const val = Number.isInteger(values[i]) ? values[i] : values[i].toFixed(2);
+    return `<div class="leg-row">
+      <div class="leg-dot" style="background:${PALETTE[i%PALETTE.length]}"></div>
+      <span class="leg-lbl" title="${esc(lbl)}">${esc(lbl)}</span>
+      <span class="leg-val">${val}${unit}</span>
+      <span class="leg-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+function drawCharts(rows) {
+  const th = getChartTheme();
+  const isCompact = document.body.classList.contains('hide-smith-active');
+
+  const cats    = [...new Set(rows.map(x => x.category || 'Other'))];
+  const qty     = cats.map(c => rows.filter(x => (x.category||'Other')===c).reduce((a,b) => a+(+b.qty_on_hand||0),0));
+  const weights = cats.map(c => rows.filter(x => (x.category||'Other')===c).reduce((a,b) => a+totalNetGrams(b),0));
+
+  const chart1 = initChart('c1');
+  chart1.setOption({
+    backgroundColor: th.bgColor,
+    tooltip: { trigger:'axis', backgroundColor:document.documentElement.dataset.theme==='dark'?'#1e293b':'#fff', borderColor:'#cbd5e1', textStyle:{color:th.textColor, fontWeight:600} },
+    grid: { top:15, left:40, right:10, bottom: cats.length>4?64:28 },
+    xAxis: {
+      type:'category', data:cats,
+      axisLabel: { color:th.textColor, fontSize:11, fontWeight:600, rotate:cats.length>4?-28:0, overflow:'truncate', width:75 },
+      axisLine: { lineStyle:{color:th.splitLineColor} },
+      splitLine: { show:false },
+    },
+    yAxis: {
+      type:'value',
+      axisLabel:{color:th.textColor, fontSize:10, fontWeight:600},
+      splitLine:{lineStyle:{color:th.splitLineColor}},
+    },
+    series:[{
+      type:'bar', data: qty.map((v,i) => ({ value:v, itemStyle:{ color:PALETTE[i%PALETTE.length], borderRadius:[4,4,0,0] } })),
+      label:{ show:true, position:'top', color:th.textColor, fontSize:10, fontWeight:700 },
+    }]
+  });
+  makeLegend('l1', cats, qty);
+
+  const chart2 = initChart('c2');
+  chart2.setOption({
+    backgroundColor: th.bgColor,
+    tooltip: {
+      trigger:'item', backgroundColor:document.documentElement.dataset.theme==='dark'?'#1e293b':'#fff',
+      borderColor:'#cbd5e1', textStyle:{color:th.textColor, fontWeight:600},
+      formatter: p => `<b>${p.name}</b><br/>${p.value.toFixed(2)}g — ${p.percent}%`
+    },
+    series:[{
+      type:'pie', radius:['45%','75%'],
+      center:['50%','50%'],
+      data: cats.map((c,i) => ({ name:c, value:weights[i], itemStyle:{color:PALETTE[i%PALETTE.length]} })),
+      label:{show:false},
+      emphasis:{ itemStyle:{ shadowBlur:6, shadowColor:'rgba(0,0,0,.15)' } }
+    }]
+  });
+  makeLegend('l2', cats, weights, 'g');
+
+  if (isCompact) {
+    if (eCharts['c3']) { eCharts['c3'].dispose(); delete eCharts['c3']; }
+    $('l3').innerHTML = '';
+  } else {
+    const smith    = [...new Set(rows.map(x => x.goldsmith_id || 'Unknown'))];
+    const smithQty = smith.map(s => rows.filter(x => (x.goldsmith_id||'Unknown')===s).reduce((a,b) => a+(+b.qty_on_hand||0),0));
+
+    const chart3 = initChart('c3');
+    chart3.setOption({
+      backgroundColor: th.bgColor,
+      tooltip: {
+        trigger:'item', backgroundColor:document.documentElement.dataset.theme==='dark'?'#1e293b':'#fff',
+        borderColor:'#cbd5e1', textStyle:{color:th.textColor, fontWeight:600},
+        formatter: p => `<b>${p.name}</b><br/>Qty: ${p.value} — ${p.percent}%`
+      },
+      series:[{
+        type:'pie', radius:['45%','75%'],
+        center:['50%','50%'],
+        data: smith.map((s,i) => ({ name:s, value:smithQty[i], itemStyle:{color:PALETTE[i%PALETTE.length]} })),
+        label:{show:false},
+        emphasis:{ itemStyle:{ shadowBlur:6, shadowColor:'rgba(0,0,0,.15)' } }
+      }]
+    });
+    makeLegend('l3', smith, smithQty);
+  }
+
+  requestAnimationFrame(() => {
+    Object.values(eCharts).forEach(c => c && c.resize());
+  });
+}
+
+const resizeCharts = debounce(() => {
+  Object.values(eCharts).forEach(c => c && c.resize());
+}, 200);
+window.addEventListener('resize', resizeCharts);
+
+const dropEl = $('drop');
+dropEl.onclick = () => $('file').click();
+dropEl.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') $('file').click(); });
+dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('drag-over'); });
+dropEl.addEventListener('dragleave', () => dropEl.classList.remove('drag-over'));
+dropEl.addEventListener('drop', e => {
+  e.preventDefault(); dropEl.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0]; if (f) loadDB(f);
+});
+$('file').onchange = e => e.target.files[0] && loadDB(e.target.files[0]);
+
+const searchEl = $('search');
+searchEl.oninput = debounce(() => {
+  $('searchClear').classList.toggle('vis', searchEl.value.length > 0);
+  render();
+});
+$('searchClear').onclick = () => {
+  searchEl.value = '';
+  $('searchClear').classList.remove('vis');
+  render();
+};
+
+$('hideZeroBtn').onclick = function() {
+  hideZeroQty = !hideZeroQty;
+  this.classList.toggle('active', hideZeroQty);
+  localStorage.hideZeroQty = hideZeroQty ? 'true' : 'false';
+  render();
+};
+
+$('analyticsBtn').onclick = function() {
+  const on = $('chartsWrap').classList.toggle('vis');
+  this.classList.toggle('active', on);
+  this.setAttribute('aria-pressed', String(on));
+  if (on) {
+    drawCharts(filtered().filter(activeQty));
+  }
+};
+
+$('layoutToggleBtn').onclick = function() {
+  if (!hasSmithData) return;
+  const hideSmithState = document.body.classList.toggle('hide-smith-active');
+  this.classList.toggle('active', hideSmithState);
+  localStorage.hideSmithActive = hideSmithState ? 'true' : 'false';
+
+  if (hideSmithState && sort.key === 'smith_wage_kyat') {
+    sort.key = 'net_grams_total';
+    sort.asc = false;
+    updateSortUI();
+  }
+
+  render();
+};
+
+$('themeBtn').onclick = function() {
+  const nowDark = document.documentElement.dataset.theme !== 'dark';
+  document.documentElement.dataset.theme = nowDark ? 'dark' : 'light';
+  this.textContent = nowDark ? '☀️' : '🌙';
+  localStorage.theme = nowDark ? 'dark' : 'light';
+  $('themeMetaColor').content = nowDark ? '#1e293b' : '#0284c7';
+  if ($('chartsWrap').classList.contains('vis'))
+    drawCharts(filtered().filter(activeQty));
+};
+
+$('baseNewBtn').onclick = function() {
+  if (this.classList.contains('active')) return;
+  $('baseTradBtn').classList.remove('active');
+  this.classList.add('active');
+  localStorage.goldBase = 'new';
+  updateGramBaseConstants(16.3296);
+};
+
+$('baseTradBtn').onclick = function() {
+  if (this.classList.contains('active')) return;
+  $('baseNewBtn').classList.remove('active');
+  this.classList.add('active');
+  localStorage.goldBase = 'traditional';
+  updateGramBaseConstants(16.606);
+};
+
+$('modalClose').onclick = closeModal;
+$('modalOv').onclick = e => { if (e.target === $('modalOv')) closeModal(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+let touchStartY = 0;
+$('modalPanel').addEventListener('touchstart', e => {
+  touchStartY = e.touches[0].clientY;
+}, { passive:true });
+$('modalPanel').addEventListener('touchmove', e => {
+  if (e.touches[0].clientY - touchStartY > 70) closeModal();
+}, { passive:true });
+
+if (localStorage.theme === 'dark') {
+  document.documentElement.dataset.theme = 'dark';
+  $('themeBtn').textContent = '☀️';
+  $('themeMetaColor').content = '#1e293b';
+}
+if (localStorage.hideSmithActive === 'true') {
+  document.body.classList.add('hide-smith-active');
+  $('layoutToggleBtn').classList.add('active');
+}
+if (localStorage.hideZeroQty === 'true') {
+  hideZeroQty = true;
+  $('hideZeroBtn').classList.add('active');
+}
+if (localStorage.goldBase === 'traditional') {
+  $('baseNewBtn').classList.remove('active');
+  $('baseTradBtn').classList.add('active');
+  GRAM_PER_KYAT = 16.606;
+  GRAM_PER_PAE  = GRAM_PER_KYAT / 16;
+  GRAM_PER_YWAY = GRAM_PER_PAE / 8;
+}
+
+updateSortUI();
+</script>
+</body>
+</html>
