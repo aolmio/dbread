@@ -1040,7 +1040,7 @@
     </div>
     <div class="actions-group">
       <div class="selector-container">
-        <button id="baseNewBtn" class="selector-btn active">16.3g Base</button>
+        <button id="baseNewBtn" class="selector-btn active">16.3293g Base</button>
         <button id="baseTradBtn" class="selector-btn">16.606g Base</button>
       </div>
       <button id="hideZeroBtn" class="hdr-btn">
@@ -1173,9 +1173,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-let GRAM_PER_KYAT = 16.3296;
-let GRAM_PER_PAE  = GRAM_PER_KYAT / 16;
-let GRAM_PER_YWAY = GRAM_PER_PAE  / 8;
+const INPUT_GRAM_BASE = 16.606;
+let CURRENT_GRAM_BASE = 16.3293;
 
 const PALETTE = [
   '#0284c7', '#d97706', '#16a34a', '#dc2626', '#4f46e5', 
@@ -1197,10 +1196,7 @@ const debounce = (fn, d = 250) => {
 };
 
 function updateGramBaseConstants(baseValue) {
-  GRAM_PER_KYAT = baseValue;
-  GRAM_PER_PAE  = GRAM_PER_KYAT / 16;
-  GRAM_PER_YWAY = GRAM_PER_PAE / 8;
-  
+  CURRENT_GRAM_BASE = baseValue;
   if (data.length > 0) {
     data.forEach(r => {
       r.net_grams_total = totalNetGrams(r);
@@ -1209,39 +1205,48 @@ function updateGramBaseConstants(baseValue) {
   }
 }
 
-function bwToGrams(kyat, pae, yway) {
-  return (+kyat||0)*GRAM_PER_KYAT + (+pae||0)*GRAM_PER_PAE + (+yway||0)*GRAM_PER_YWAY;
+function bwToGrams(kyat, pae, yway, base = INPUT_GRAM_BASE) {
+  const gPerKyat = base;
+  const gPerPae = gPerKyat / 16;
+  const gPerYway = gPerPae / 8;
+  return (+kyat||0)*gPerKyat + (+pae||0)*gPerPae + (+yway||0)*gPerYway;
 }
-function gramsToBWParts(g) {
+
+function gramsToBWParts(g, base = CURRENT_GRAM_BASE) {
   if (!g || g <= 0) return { kyat:0, pae:0, yway:0 };
+  const gPerKyat = base;
+  const gPerPae = gPerKyat / 16;
+  const gPerYway = gPerPae / 8;
   let rem = g;
-  const kyat = Math.floor(rem/GRAM_PER_KYAT); rem -= kyat*GRAM_PER_KYAT;
-  const pae  = Math.floor(rem/GRAM_PER_PAE);  rem -= pae*GRAM_PER_PAE;
-  const yway = rem/GRAM_PER_YWAY;
+  const kyat = Math.floor(rem / gPerKyat); rem -= kyat * gPerKyat;
+  const pae  = Math.floor(rem / gPerPae);  rem -= pae * gPerPae;
+  const yway = rem / gPerYway;
   return { kyat, pae, yway };
 }
-function gramsToBW(g) {
-  const {kyat,pae,yway} = gramsToBWParts(g);
+
+function gramsToBW(g, base = CURRENT_GRAM_BASE) {
+  const {kyat, pae, yway} = gramsToBWParts(g, base);
   const o = [];
   if (kyat) o.push(`${kyat} ကျပ်`);
   if (pae)  o.push(`${pae} ပဲ`);
-  if (+yway.toFixed(1)) o.push(`${yway.toFixed(1)} ရွေး`);
+  if (+yway.toFixed(1)) o.push(`${(+yway.toFixed(1))} ရွေး`);
   return o.join(' ') || '0';
 }
+
 function bw(k, p, y) {
-  const o = [];
-  if (+k) o.push(`${Math.floor(+k)} ကျပ်`);
-  if (+p) o.push(`${Math.floor(+p)} ပဲ`);
-  if (+y) o.push(`${(+y).toFixed(1)} ရွေး`);
-  return o.join(' ') || '0';
+  const grams = bwToGrams(k, p, y, INPUT_GRAM_BASE);
+  return gramsToBW(grams, CURRENT_GRAM_BASE);
 }
+
 function netGramsPerUnit(r) {
-  const fromBW = bwToGrams(r.Net_Kyat, r.Net_Pe, r.Net_Yway);
+  const fromBW = bwToGrams(r.Net_Kyat, r.Net_Pe, r.Net_Yway, INPUT_GRAM_BASE);
   return fromBW > 0 ? fromBW : (+r.weight_gram || 0);
 }
+
 function totalNetGrams(r) {
   return netGramsPerUnit(r) * (+r.qty_on_hand || 0);
 }
+
 const activeQty = r => (+r.qty_on_hand || 0) > 0;
 
 let toastTimer;
@@ -1299,12 +1304,12 @@ function detail(idx) {
       <div>
         <div class="mwt-lbl">Net per Unit</div>
         <div class="mwt-val">${netGramsPerUnit(i).toFixed(4)}g</div>
-        <div class="mwt-bw">${gramsToBW(netGramsPerUnit(i))}</div>
+        <div class="mwt-bw">${gramsToBW(netGramsPerUnit(i), CURRENT_GRAM_BASE)}</div>
       </div>
       <div>
         <div class="mwt-lbl">Total ×${i.qty_on_hand||0}</div>
         <div class="mwt-val">${tg.toFixed(4)}g</div>
-        <div class="mwt-bw">${gramsToBW(tg)}</div>
+        <div class="mwt-bw">${gramsToBW(tg, CURRENT_GRAM_BASE)}</div>
       </div>
     </div>
     <div class="modal-meta" style="margin-bottom:16px; gap:6px; flex-wrap: wrap;">
@@ -1337,6 +1342,7 @@ function openModal() {
   $('modalOv').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
 function closeModal() {
   $('modalOv').classList.remove('open');
   document.body.style.overflow = '';
@@ -1514,14 +1520,14 @@ function filtered() {
       let vb = b[sort.key];
 
       if (sort.key === 'Net_Kyat') {
-        va = bwToGrams(a.Net_Kyat, a.Net_Pe, a.Net_Yway);
-        vb = bwToGrams(b.Net_Kyat, b.Net_Pe, b.Net_Yway);
+        va = bwToGrams(a.Net_Kyat, a.Net_Pe, a.Net_Yway, INPUT_GRAM_BASE);
+        vb = bwToGrams(b.Net_Kyat, b.Net_Pe, b.Net_Yway, INPUT_GRAM_BASE);
       } else if (sort.key === 'smith_wage_kyat') {
-        va = bwToGrams(a.smith_wage_kyat, a.smith_wage_pe, a.smith_wage_ywe);
-        vb = bwToGrams(b.smith_wage_kyat, b.smith_wage_pe, b.smith_wage_ywe);
+        va = bwToGrams(a.smith_wage_kyat, a.smith_wage_pe, a.smith_wage_ywe, INPUT_GRAM_BASE);
+        vb = bwToGrams(b.smith_wage_kyat, b.smith_wage_pe, b.smith_wage_ywe, INPUT_GRAM_BASE);
       } else if (sort.key === 'sale_wage_profit_kyat') {
-        va = bwToGrams(a.sale_wage_profit_kyat, a.sale_wage_profit_pe, a.sale_wage_profit_ywe);
-        vb = bwToGrams(b.sale_wage_profit_kyat, b.sale_wage_profit_pe, b.sale_wage_profit_ywe);
+        va = bwToGrams(a.sale_wage_profit_kyat, a.sale_wage_profit_pe, a.sale_wage_profit_ywe, INPUT_GRAM_BASE);
+        vb = bwToGrams(b.sale_wage_profit_kyat, b.sale_wage_profit_pe, b.sale_wage_profit_ywe, INPUT_GRAM_BASE);
       }
 
       const na = parseFloat(va), nb = parseFloat(vb);
@@ -1541,7 +1547,7 @@ function render() {
   $('mQty').textContent  = activeRows.reduce((s,r) => s + (+r.qty_on_hand||0), 0).toLocaleString();
   $('mG').textContent    = totalG.toFixed(2);
   $('mGsub').textContent = 'grams';
-  $('mBW').textContent   = gramsToBW(totalG);
+  $('mBW').textContent   = gramsToBW(totalG, CURRENT_GRAM_BASE);
   $('rowCount').textContent = rows.length.toLocaleString();
 
   if (rows.length === 0) {
@@ -1563,7 +1569,7 @@ function render() {
         <td><span class="bdg bdg-qty">${i.qty_on_hand||0}</span></td>
         <td>
           <div class="cell-g">${totalNetGrams(i).toFixed(2)+'g'}</div>
-          <div class="cell-bw">${gramsToBW(totalNetGrams(i))}</div>
+          <div class="cell-bw">${gramsToBW(totalNetGrams(i), CURRENT_GRAM_BASE)}</div>
         </td>
         <td>
           <div class="bdg bdg-net">
@@ -1600,7 +1606,7 @@ function render() {
         <div class="card-wt">
           ⚖️ ${totalNetGrams(i).toFixed(2)+'g'}
           <span style="color:var(--border)">|</span>
-          ${gramsToBW(totalNetGrams(i))}
+          ${gramsToBW(totalNetGrams(i), CURRENT_GRAM_BASE)}
         </div>
         <div class="card-badges">
           <div class="bdg bdg-net">
@@ -1628,6 +1634,7 @@ $('tbody').addEventListener('dblclick', e => {
   const tr = e.target.closest('tr[data-idx]');
   if (tr) detail(+tr.dataset.idx);
 });
+
 $('tbody').addEventListener('click', e => {
   const copyEl = e.target.closest('[data-copy]');
   if (copyEl) { e.stopPropagation(); copyCode(+copyEl.dataset.copy); return; }
@@ -1822,7 +1829,7 @@ $('baseNewBtn').onclick = function() {
   $('baseTradBtn').classList.remove('active');
   this.classList.add('active');
   localStorage.goldBase = 'new';
-  updateGramBaseConstants(16.3296);
+  updateGramBaseConstants(16.3293);
 };
 
 $('baseTradBtn').onclick = function() {
@@ -1861,9 +1868,9 @@ if (localStorage.hideZeroQty === 'true') {
 if (localStorage.goldBase === 'traditional') {
   $('baseNewBtn').classList.remove('active');
   $('baseTradBtn').classList.add('active');
-  GRAM_PER_KYAT = 16.606;
-  GRAM_PER_PAE  = GRAM_PER_KYAT / 16;
-  GRAM_PER_YWAY = GRAM_PER_PAE / 8;
+  CURRENT_GRAM_BASE = 16.606;
+} else {
+  CURRENT_GRAM_BASE = 16.3293;
 }
 
 updateSortUI();
