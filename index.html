@@ -1501,7 +1501,8 @@ $('msortBar').addEventListener('click', e => {
 });
 
 function filtered() {
-  const t = $('search').value.toLowerCase().trim();
+  const rawInput = $('search').value.toLowerCase().trim();
+  const keywords = rawInput ? rawInput.split(/\s+/).filter(Boolean) : [];
   const isCompact = document.body.classList.contains('hide-smith-active');
 
   return data
@@ -1510,10 +1511,12 @@ function filtered() {
 
       const matchCategory = selected.has('All') || selected.has(i.category);
       if (!matchCategory) return false;
-      if (!t) return true;
+      if (keywords.length === 0) return true;
 
-      const smithString = isCompact ? '' : ` ${i.goldsmith_id||''}`;
-      return `${i.item_code} ${i.item_name}${smithString}`.toLowerCase().includes(t);
+      const smithString = isCompact ? '' : ` ${i.goldsmith_id || ''}`;
+      const searchTarget = `${i.item_code || ''} ${i.item_name || ''} ${i.category || ''}${smithString}`.toLowerCase();
+
+      return keywords.every(kw => searchTarget.includes(kw));
     })
     .sort((a, b) => {
       let va = a[sort.key];
